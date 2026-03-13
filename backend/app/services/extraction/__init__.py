@@ -5,8 +5,9 @@ based on file extensions. It follows the Factory pattern to decouple the calling
 code from specific extractor implementations.
 """
 
-from .base import BaseExtractor
+from .base import BaseExtractor, ExtractionError
 from .pdf import PyMuPDFExtractor
+from .ocr import EasyOCRExtractor
 
 
 def get_extractor(filename: str) -> BaseExtractor:
@@ -33,10 +34,11 @@ def get_extractor(filename: str) -> BaseExtractor:
         >>> extractor = get_extractor("image.png")
         ValueError: Unsupported file type: image.png
     """
-    if filename.lower().endswith('.pdf'):
+    filename_lower = filename.lower()
+    
+    if filename_lower.endswith('.pdf'):
         return PyMuPDFExtractor()
-    # Later: add OCR for images
-    # elif filename.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff')):
-    #     return EasyOCRExtractor()
+    elif filename_lower.endswith(('.png', '.jpg', '.jpeg', '.tiff', '.tif')):
+        return EasyOCRExtractor()
     else:
         raise ValueError(f"Unsupported file type: {filename}")

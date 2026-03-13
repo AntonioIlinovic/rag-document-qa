@@ -2,6 +2,16 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 
+class ExtractionError(Exception):
+    """Custom exception for document extraction failures.
+    
+    Raised when text extraction fails due to file corruption, unsupported formats,
+    or other extraction-related issues. This allows for better error handling
+    and user feedback compared to generic exceptions.
+    """
+    pass
+
+
 class BaseExtractor(ABC):
     """Abstract base class for document text extractors.
  
