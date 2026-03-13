@@ -54,11 +54,11 @@ For each key technology, options are listed with a **recommended** pick.
 ### Vector Store
 | Option | Pros | Cons |
 |--------|------|------|
-| **FAISS** ✅ | Fast, battle-tested, no server needed | File-based persistence (pickle), no built-in metadata filtering |
-| ChromaDB | Built-in persistence, metadata filtering, simpler API | Extra dependency, server mode adds complexity |
+| **ChromaDB** ✅ | Built-in persistence, metadata filtering, simpler API | Extra dependency, server mode adds complexity |
+| FAISS | Fast, battle-tested, no server needed | File-based persistence (pickle), no built-in metadata filtering |
 | Qdrant | Production-grade, rich filtering | Overkill for this scope |
 
-**Recommendation:** FAISS — lightweight, no extra server, assignment mentions it. For MVP, file-based persistence is fine. Document in README that a production system would use a dedicated vector DB.
+**Recommendation:** ChromaDB — built-in persistence, metadata filtering, simpler API. For MVP, file-based persistence is fine. Document in README that a production system would use a dedicated vector DB.
 
 ### QA / LLM
 | Option | Pros | Cons |
@@ -130,7 +130,7 @@ rag-document-qa/
 │   │       │   ├── __init__.py
 │   │       │   ├── chunker.py      # Text splitting logic
 │   │       │   ├── embedder.py     # ABC + SentenceTransformerEmbedder
-│   │       │   └── store.py        # FAISS vector store (save/load per session)
+│   │       │   └── store.py        # ChromaDB vector store (save/load per session)
 │   │       ├── qa/
 │   │       │   ├── __init__.py
 │   │       │   ├── base.py         # ABC: BaseQAEngine
@@ -146,7 +146,7 @@ rag-document-qa/
 │   │   ├── test_qa.py
 │   │   └── test_api.py             # Integration tests for endpoints
 │   │
-│   └── data/                       # Runtime storage: sessions, FAISS indexes (gitignored)
+│   └── data/                       # Runtime storage: sessions, ChromaDB indexes (gitignored)
 │
 └── frontend/                       # OPTIONAL: Streamlit UI (separate service)
     ├── Dockerfile
@@ -188,7 +188,7 @@ rag-document-qa/
 ### Phase 3: RAG Pipeline (Chunking + Embedding + Vector Store)
 - Implement `chunker.py`: split text into overlapping chunks (configurable size/overlap)
 - Implement `embedder.py`: ABC + `SentenceTransformerEmbedder` using `all-MiniLM-L6-v2`
-- Implement `store.py`: FAISS index wrapper with:
+- Implement `store.py`: ChromaDB vector store wrapper with:
   - `add_documents(chunks, embeddings)`
   - `search(query_embedding, top_k) -> list[str]`
   - `save(path)` / `load(path)` for persistence per session
@@ -204,16 +204,16 @@ rag-document-qa/
 ### Phase 5: Session Management & API Endpoints
 - Implement `session.py`:
   - `create_session() -> session_id` (UUID-based)
-  - `get_session(session_id) -> SessionData` (extracted text, FAISS index path, metadata)
+  - `get_session(session_id) -> SessionData` (extracted text, ChromaDB collection name, metadata)
   - Store session state on disk under `data/{session_id}/`
 - Implement `POST /upload`:
   - Accept `multipart/form-data` with one or more files
   - Optional `session_id` param (create new if not provided)
-  - Extract text → chunk → embed → store in FAISS
+  - Extract text → chunk → embed → store in ChromaDB
   - Return `session_id` + list of processed documents
 - Implement `POST /ask`:
   - Accept JSON `{ "session_id": "...", "question": "..." }`
-  - Load session's FAISS index → search → pass top-k chunks to QA engine → return answer
+  - Load session's ChromaDB collection → search → pass top-k chunks to QA engine → return answer
   - Include source chunks in response for transparency
 - Add proper error handling: 404 for invalid session, 422 for bad input, 500 with structured error
 - **Write integration tests:** Upload a doc, ask a question, verify response structure
@@ -325,9 +325,7 @@ Response 200:
 ```
 Response 200:
 {
-  "status": "ok",
-  "qa_engine": "cloud",
-  "version": "0.1.0"
+  "status": "ok"
 }
 ```
 
@@ -407,7 +405,7 @@ Each enhancement is assessed for **complexity**, **files affected**, and **what 
 - **Changes needed:**
   - Depends on Security (6.6) for JWT auth
   - New: user model + simple storage (SQLite or JSON file for MVP)
-  - Update `session.py` → `user_session.py`: scope FAISS indexes by user ID
+  - Update `session.py` → `user_session.py`: scope ChromaDB collections by user ID
   - Update API deps: inject `current_user` instead of `session_id`
 - **Notes:** The abstract session interface makes this a clean swap. Main decision is user storage backend (SQLite vs. file-based vs. full DB).
 
@@ -419,6 +417,5 @@ Each enhancement is assessed for **complexity**, **files affected**, and **what 
 |------|-----------|
 | EasyOCR OOM in Docker | Increase Docker memory limit (4GB+); fall back to PyMuPDF-only for demo |
 | OpenAI API rate limits / costs | Implement LocalQAEngine as fallback; add mock engine for testing |
-| FAISS pickle deserialization risk | Document the risk in README; note production would use a dedicated vector DB |
 | Large file uploads | Set file size limits in FastAPI (`UploadFile` + config); validate MIME types |
 | Model download on first run | Pre-download models in Dockerfile build stage |
