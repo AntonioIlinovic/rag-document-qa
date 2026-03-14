@@ -24,14 +24,14 @@ def test_store_add_documents(store):
 
 
 def test_store_add_documents_without_metadata(store):
-    """Test that store fills in empty metadata dicts when none are provided."""
+    """Test that store fills in None values when no metadata is provided."""
     chunks = ["Chunk 1", "Chunk 2"]
     embeddings = [[0.1, 0.2], [0.3, 0.4]]
 
     store.add_documents(chunks, embeddings)
 
     call_kwargs = store.collection.add.call_args[1]
-    assert call_kwargs["metadatas"] == [{}, {}]
+    assert call_kwargs["metadatas"] == [None, None]
 
 
 def test_store_add_empty_documents(store):

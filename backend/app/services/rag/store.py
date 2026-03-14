@@ -174,7 +174,7 @@ class ChromaDBStore(BaseVectorStore):
                 raise ValueError(f"Embedding at index {i} cannot be empty")
 
         if metadata is None:
-            metadata = [{} for _ in chunks]
+            metadata = [None for _ in chunks]
 
         ids = [f"{self.collection_name}_{uuid.uuid4().hex[:8]}_{i}" for i in range(len(chunks))]
 

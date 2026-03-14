@@ -130,3 +130,51 @@ def store(mock_chroma_collection, mock_chroma_client):
     instance._client = mock_chroma_client
     instance._collection = mock_chroma_collection
     return instance
+
+
+# ---------------------------------------------------------------------------
+# Pipeline fixtures
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def mock_chunker():
+    """Mock chunker returning two predictable chunks."""
+    mock = Mock()
+    mock.chunk_text.return_value = ["Chunk one content", "Chunk two content"]
+    return mock
+
+
+@pytest.fixture
+def mock_embedder():
+    """Mock embedder returning 3-dim embeddings, one per input text."""
+    mock = Mock()
+    mock.embed_texts.side_effect = lambda texts: [
+        [float(i) * 0.1, float(i) * 0.2, float(i) * 0.3]
+        for i in range(len(texts))
+    ]
+    return mock
+
+
+@pytest.fixture
+def mock_store():
+    """Mock vector store with canned search results."""
+    mock = Mock()
+    mock.add_documents.return_value = None
+    mock.count_documents.return_value = 2
+    mock.delete_collection.return_value = None
+    mock.search.return_value = [
+        {"chunk": "Chunk one content", "metadata": {"source": "doc1"}, "score": 0.9, "id": "id_1"},
+        {"chunk": "Chunk two content", "metadata": {"source": "doc1"}, "score": 0.8, "id": "id_2"},
+    ]
+    return mock
+
+
+@pytest.fixture
+def pipeline(mock_chunker, mock_embedder, mock_store):
+    """RAGPipeline wired with all mock dependencies."""
+    from app.services.rag.pipeline import RAGPipeline
+    return RAGPipeline(
+        chunker=mock_chunker,
+        embedder=mock_embedder,
+        store=mock_store,
+    )
