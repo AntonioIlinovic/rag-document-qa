@@ -216,3 +216,6 @@ GEMINI.md
 
 # VS Code
 .vscode/
+
+# ChromaDB
+app_data/chroma/
