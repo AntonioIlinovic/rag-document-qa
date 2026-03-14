@@ -213,3 +213,6 @@ __marimo__/
 # Gemini
 GEMINI.md
 .geminiignore
+
+# VS Code
+.vscode/

@@ -8,48 +8,31 @@ import pytest
 from app.services.rag.chunker import get_chunker
 
 
-def test_chunker_creates_reasonable_chunks(sample_text_content):
-    """Test that chunker creates chunks with reasonable size and overlap.
+def test_chunker_deterministic_behavior():
+    """Test chunker with deterministic input for predictable results.
     
-    Verifies that the chunker splits text into chunks that respect the
-    configured chunk size and overlap parameters.
-    
-    Args:
-        sample_text_content: Fixture providing sample text for testing
-        
-    Asserts:
-        - Result is a list of chunks
-        - Each chunk is a string
-        - Chunk sizes are within expected range
-        - Overlap is working correctly
+    Uses controlled text without natural breaks to force character-level
+    splitting, ensuring deterministic chunking and overlap behavior.
     """
-    # Arrange
     chunker = get_chunker()
     
-    # Act
-    chunks = chunker.chunk_text(sample_text_content, chunk_size=500, chunk_overlap=100)
+    # Use predictable text with 10 numbers, repeated pattern
+    numbers = "1234567890"  # 10 characters
+    text = numbers * 5  # 50 characters total (10 * 5)
+    chunks = chunker.chunk_text(text, chunk_size=15, chunk_overlap=5)
     
-    # Assert
-    assert isinstance(chunks, list)
-    assert len(chunks) > 1  # Should create multiple chunks
+    # Predictable results: 50 chars with 15 + (15-5) + (15-5) + (15-5) + (10-5)
+    assert len(chunks) == 5
+    assert len(chunks[0]) == 15
+    assert len(chunks[1]) == 15
+    assert len(chunks[2]) == 15  
+    assert len(chunks[3]) == 15
+    assert len(chunks[4]) == 10
     
-    # Check that most chunks are within reasonable size range
-    for chunk in chunks[:-1]:  # Skip last chunk which might be smaller
-        assert len(chunk) <= 600  # Allow some flexibility for word boundaries
-    
-    # Verify overlap between adjacent chunks (except for very small chunks)
-    for i in range(len(chunks) - 1):
-        current_chunk = chunks[i]
-        next_chunk = chunks[i+1]
-        
-        # Skip overlap check if either chunk is too small
-        if len(current_chunk) < 50 or len(next_chunk) < 50:
-            continue
-            
-        # Check for overlap using the smaller of: expected overlap or available text
-        overlap_size = min(50, len(current_chunk), len(next_chunk))
-        overlap_text = current_chunk[-overlap_size:]
-        assert overlap_text in next_chunk, f"No overlap found between chunk {i} and {i+1}"
+    # Verify deterministic overlap behavior
+    assert chunks[1].startswith(chunks[0][-5:])  # 5 char overlap
+    assert chunks[2].startswith(chunks[1][-5:])  # 5 char overlap
+    assert chunks[3].startswith(chunks[2][-5:])  # 5 char overlap
 
 
 def test_chunker_handles_empty_text():
@@ -85,7 +68,7 @@ def test_chunker_handles_short_text():
     assert chunks[0] == short_text
 
 
-def test_chunker_handles_very_long_text():
+def test_chunker_handles_very_long_text(sample_text_content):
     """Test that chunker handles very long text efficiently.
     
     Verifies that the chunker can process long documents without issues.
@@ -131,32 +114,35 @@ def test_chunker_with_different_parameters(sample_text_content):
         assert len(chunk) <= 2400  # Allow some flexibility
 
 
-def test_chunker_preserves_content_integrity(sample_text_from_file):
+def test_chunker_preserves_content_integrity():
     """Test that chunker preserves content integrity.
     
-    Verifies that when chunks are concatenated back together (with overlap handled),
-    the original content is preserved.
-    
-    Args:
-        sample_text_from_file: Fixture providing text from actual test file
+    Uses deterministic input to verify that chunking preserves
+    the original content structure and overlap behavior.
     """
-    # Arrange
     chunker = get_chunker()
-    original_text = sample_text_from_file
     
-    # Act
-    chunks = chunker.chunk_text(original_text, chunk_size=500, chunk_overlap=100)
+    # Use the same deterministic pattern as the other test
+    numbers = "1234567890"  # 10 characters
+    original_text = numbers * 8  # 80 characters total
     
-    # Assert - Simple integrity check
-    # The first chunk should start with the original text
+    chunks = chunker.chunk_text(original_text, chunk_size=25, chunk_overlap=5)
+    
+    # Verify the first chunk starts with original text
     assert original_text.startswith(chunks[0])
     
-    # The last chunk should end with the original text
+    # Verify the last chunk ends with original text
     assert original_text.endswith(chunks[-1])
     
-    # All chunks combined should contain all major sections
-    combined_text = " ".join(chunks)
-    # Check that key phrases from original are present
-    key_phrases = ["SolarSolutions", "SC-100", "waterproof", "warranty"]
-    for phrase in key_phrases:
-        assert phrase in combined_text, f"Key phrase '{phrase}' not found in combined chunks"
+    # Verify all chunks combined preserve the pattern
+    combined_text = "".join(chunks)  # No spaces for this test
+    # Check that the pattern appears throughout
+    assert "1234567890" in combined_text
+    
+    # Verify specific overlap behavior
+    for i in range(len(chunks) - 1):
+        current_chunk = chunks[i]
+        next_chunk = chunks[i+1]
+        if len(current_chunk) >= 5 and len(next_chunk) >= 5:
+            overlap_text = current_chunk[-5:]
+            assert next_chunk.startswith(overlap_text)

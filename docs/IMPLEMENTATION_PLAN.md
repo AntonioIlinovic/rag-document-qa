@@ -141,10 +141,18 @@ rag-document-qa/
 │   ├── tests/
 │   │   ├── __init__.py
 │   │   ├── conftest.py             # Shared fixtures (test client, temp sessions)
-│   │   ├── test_extraction.py
-│   │   ├── test_rag.py
-│   │   ├── test_qa.py
-│   │   └── test_api.py             # Integration tests for endpoints
+│   │   ├── test_config.py          # Environment configuration tests
+│   │   ├── extraction/             # Document extraction tests
+│   │   │   ├── __init__.py
+│   │   │   ├── test_ocr_extraction.py
+│   │   │   └── test_pdf_extraction.py
+│   │   ├── rag/                    # RAG component tests
+│   │   │   ├── __init__.py
+│   │   │   ├── test_chunker.py
+│   │   │   ├── test_embedder.py
+│   │   │   └── test_store.py
+│   │   ├── test_qa.py              # QA engine tests (to be created)
+│   │   └── test_api.py             # Integration tests for endpoints (to be created)
 │   │
 │   └── data/                       # Runtime storage: sessions, ChromaDB indexes (gitignored)
 │
