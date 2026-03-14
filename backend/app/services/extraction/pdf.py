@@ -1,34 +1,27 @@
-import fitz  # PyMuPDF
-from .base import BaseExtractor
+import fitz
+from .base import BaseExtractor, ExtractionError
 
 
 class PyMuPDFExtractor(BaseExtractor):
-    """PDF text extractor using PyMuPDF (fitz).
-    
-    This extractor handles PDF files using the PyMuPDF library, which provides
-    fast and reliable text extraction from PDF documents.
-    """
-    
+    """PDF text extractor using PyMuPDF (fitz)."""
+
     def extract(self, file_bytes: bytes, filename: str) -> str:
         """Extract text content from a PDF file.
-        
-        Opens the PDF from memory, iterates through all pages, and concatenates
-        the extracted text. The PDF is properly closed to free resources.
-        
+
         Args:
             file_bytes: The raw bytes of the PDF file
             filename: The name of the PDF file (for logging/reference)
-            
+
         Returns:
             The concatenated text content from all PDF pages
-            
+
         Raises:
-            fitz.FitzError: If the PDF cannot be opened or is corrupted
-            Exception: For other PDF processing errors
+            ExtractionError: If the PDF cannot be opened or text extraction fails
         """
-        doc = fitz.open(stream=file_bytes, filetype="pdf")
-        text = ""
-        for page in doc:
-            text += page.get_text()
-        doc.close()
-        return text
+        try:
+            with fitz.open(stream=file_bytes, filetype="pdf") as doc:
+                return "".join(page.get_text() for page in doc)
+        except ExtractionError:
+            raise
+        except Exception as e:
+            raise ExtractionError(f"Failed to extract text from {filename}: {e}")
