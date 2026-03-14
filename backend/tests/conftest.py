@@ -9,7 +9,7 @@ import pytest
 import tempfile
 import shutil
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, MagicMock, patch
 
 
 @pytest.fixture
@@ -186,3 +186,39 @@ def mock_chroma_collection():
     }
     mock.count.return_value = 2
     return mock
+
+
+@pytest.fixture
+def mock_embedding_model():
+    """Provide a mock sentence-transformers model that returns valid embeddings.
+ 
+    The mock's encode() returns plain Python lists (one per input text) to
+    simulate a real model without loading any weights. Each vector has 384
+    dimensions to match all-MiniLM-L6-v2.
+    """
+    EMBEDDING_DIM = 384
+ 
+    mock = MagicMock()
+    mock.encode.side_effect = lambda texts, **kwargs: [
+        [float(i) / EMBEDDING_DIM] * EMBEDDING_DIM for i in range(len(texts))
+    ]
+    mock.get_sentence_embedding_dimension.return_value = EMBEDDING_DIM
+    return mock
+ 
+ 
+@pytest.fixture
+def embedder(mock_embedding_model):
+    """Provide a SentenceTransformerEmbedder with the real model load patched out.
+ 
+    Patches _load_model so no weights are downloaded during instantiation,
+    then injects the mock model. Use this fixture instead of calling
+    get_embedder() + manually setting .model in each test.
+    """
+    from app.services.rag.embedder import SentenceTransformerEmbedder
+ 
+    with patch.object(SentenceTransformerEmbedder, "_load_model"):
+        instance = SentenceTransformerEmbedder()
+ 
+    instance.model = mock_embedding_model
+    return instance
+ 

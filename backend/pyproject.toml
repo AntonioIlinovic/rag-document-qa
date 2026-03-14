@@ -21,3 +21,6 @@ dependencies = [
     "transformers>=5.3.0",
     "uvicorn>=0.41.0",
 ]
+
+[tool.pytest.ini_options]
+markers = ["integration: marks tests that require external models or services"]

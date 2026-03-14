@@ -8,206 +8,137 @@ import pytest
 from app.services.rag.embedder import get_embedder
 
 
-def test_mock_embedder_generates_embeddings(mock_embedding_model):
-    """Test that mock embedder generates consistent embeddings.
-    
-    Verifies that the mock embedding model returns embeddings in the
-    expected format and that embeddings are consistent for the same input.
-    
-    Args:
-        mock_embedding_model: Fixture providing mock embedding model
-    """
-    # Arrange
-    embedder = get_embedder()
-    embedder.model = mock_embedding_model  # Inject mock for testing
-    test_text = "This is a test text for embedding."
-    
-    # Act
-    embeddings = embedder.embed_text(test_text)
-    
-    # Assert
+def test_mock_embedder_generates_embeddings(embedder):
+    """Test that mock embedder generates consistent embeddings."""
+    embeddings = embedder.embed_texts(["This is a test text for embedding."])
+
     assert isinstance(embeddings, list)
-    assert len(embeddings) > 0
-    assert all(isinstance(emb, list) for emb in embeddings)
-    assert all(isinstance(val, (int, float)) for emb in embeddings for val in emb)
+    assert len(embeddings) == 1
+    assert isinstance(embeddings[0], list)
+    assert all(isinstance(val, (int, float)) for val in embeddings[0])
 
 
-def test_embedder_handles_batch_texts(mock_embedding_model):
-    """Test that embedder handles multiple texts efficiently.
-    
-    Verifies that the embedder can process multiple texts in a single call.
-    
-    Args:
-        mock_embedding_model: Fixture providing mock embedding model
-    """
-    # Arrange
-    embedder = get_embedder()
-    embedder.model = mock_embedding_model  # Inject mock for testing
-    texts = [
-        "First test text",
-        "Second test text", 
-        "Third test text"
-    ]
-    
-    # Act
+def test_embedder_handles_batch_texts(embedder):
+    """Test that embedder handles multiple texts efficiently."""
+    texts = ["First test text", "Second test text", "Third test text"]
+
     embeddings = embedder.embed_texts(texts)
-    
-    # Assert
+
     assert isinstance(embeddings, list)
     assert len(embeddings) == len(texts)
     assert all(isinstance(emb, list) for emb in embeddings)
 
 
-def test_embedder_handles_empty_text(mock_embedding_model):
-    """Test that embedder handles empty text gracefully.
-    
-    Verifies that the embedder returns appropriate results for empty input.
-    
-    Args:
-        mock_embedding_model: Fixture providing mock embedding model
-    """
-    # Arrange
-    embedder = get_embedder()
-    embedder.model = mock_embedding_model  # Inject mock for testing
-    
-    # Act
-    embeddings = embedder.embed_text("")
-    
-    # Assert
+def test_embedder_handles_empty_text(embedder):
+    """Test that embedder handles empty text gracefully."""
+    embeddings = embedder.embed_texts([""])
+
     assert isinstance(embeddings, list)
-    # Mock should still return something even for empty text
+    assert len(embeddings) == 1
 
 
-def test_embedder_handles_empty_list(mock_embedding_model):
-    """Test that embedder handles empty list of texts gracefully.
-    
-    Verifies that the embedder returns appropriate results for empty list input.
-    
-    Args:
-        mock_embedding_model: Fixture providing mock embedding model
-    """
-    # Arrange
-    embedder = get_embedder()
-    embedder.model = mock_embedding_model  # Inject mock for testing
-    
-    # Act
+def test_embedder_handles_empty_list(embedder):
+    """Test that embedder returns empty list for empty input."""
     embeddings = embedder.embed_texts([])
-    
-    # Assert
+
     assert isinstance(embeddings, list)
     assert len(embeddings) == 0
 
 
-def test_embedder_embedding_consistency(mock_embedding_model):
-    """Test that embedder produces consistent embeddings for same input.
-    
-    Verifies that the same text always produces the same embedding.
-    
-    Args:
-        mock_embedding_model: Fixture providing mock embedding model
-    """
-    # Arrange
-    embedder = get_embedder()
-    embedder.model = mock_embedding_model  # Inject mock for testing
+def test_embedder_embedding_consistency(embedder):
+    """Test that embedder produces consistent embeddings for same input."""
     test_text = "Consistency test text"
-    
-    # Act
-    embeddings1 = embedder.embed_text(test_text)
-    embeddings2 = embedder.embed_text(test_text)
-    
-    # Assert
+
+    embeddings1 = embedder.embed_texts([test_text])
+    embeddings2 = embedder.embed_texts([test_text])
+
     assert embeddings1 == embeddings2
 
 
-def test_embedder_embedding_dimensions(mock_embedding_model):
-    """Test that embeddings have consistent dimensions.
-    
-    Verifies that all embeddings have the same dimensionality.
-    
-    Args:
-        mock_embedding_model: Fixture providing mock embedding model
-    """
-    # Arrange
-    embedder = get_embedder()
-    embedder.model = mock_embedding_model  # Inject mock for testing
+def test_embedder_embedding_dimensions(embedder):
+    """Test that all embeddings have the same dimensionality."""
     texts = ["Text 1", "Text 2", "Text 3"]
-    
-    # Act
+
     embeddings = embedder.embed_texts(texts)
-    
-    # Assert
-    if len(embeddings) > 1:
-        # All embeddings should have the same dimension
-        first_dim = len(embeddings[0])
-        assert all(len(emb) == first_dim for emb in embeddings)
+
+    first_dim = len(embeddings[0])
+    assert all(len(emb) == first_dim for emb in embeddings)
 
 
-@pytest.mark.integration  # Mark as integration test (uses real model)
+def test_embedder_error_handling(embedder):
+    """Test that embedder raises ValueError for invalid inputs."""
+    with pytest.raises(ValueError):
+        embedder.embed_texts(None)
+
+    with pytest.raises(ValueError):
+        embedder.embed_texts([None])
+
+    with pytest.raises(ValueError):
+        embedder.embed_texts([123])
+
+    with pytest.raises(ValueError):
+        embedder.embed_texts("not a list")
+
+
+@pytest.mark.integration
 def test_real_embedder_integration():
     """Integration test using real embedding model.
-    
-    This test uses the actual sentence-transformers model to verify
-    that the real embedder works correctly. This test is slower and
-    should be run sparingly.
-    
-    Note:
-        This test requires the actual embedding model to be downloaded.
-        It may take several seconds to run.
+
+    Requires the actual sentence-transformers model to be downloaded.
+    Run sparingly — this test is slow.
     """
-    # Arrange
-    embedder = get_embedder()  # Use real embedder
-    test_text = "This is a test for the real embedding model."
-    
-    # Act
-    embeddings = embedder.embed_text(test_text)
-    
-    # Assert
+    embedder = get_embedder()
+
+    embeddings = embedder.embed_texts(["This is a test for the real embedding model."])
+
     assert isinstance(embeddings, list)
-    assert len(embeddings) > 0
-    assert len(embeddings[0]) > 0  # Should have actual embedding dimensions
-    assert all(isinstance(val, float) for val in embeddings[0])
-    
-    # Typical sentence transformer embeddings have 384 dimensions for MiniLM
+    assert len(embeddings) == 1
     assert len(embeddings[0]) == 384
+    assert all(isinstance(val, float) for val in embeddings[0])
 
 
 @pytest.mark.integration
 def test_real_embedder_batch_processing():
-    """Integration test for batch processing with real model.
-    
-    Verifies that the real embedder can handle multiple texts efficiently.
-    """
-    # Arrange
-    embedder = get_embedder()  # Use real embedder
+    """Integration test for batch processing with real model."""
+    embedder = get_embedder()
     texts = [
         "First sentence for embedding test.",
         "Second sentence for embedding test.",
-        "Third sentence for embedding test."
+        "This is a unrelated sentence. It should have least semantic similarity with the other sentences.",
+        "The quick brown fox jumps over the lazy dog.",
+        "A fast brown fox leaps above the sleeping dog."
     ]
-    
-    # Act
+
     embeddings = embedder.embed_texts(texts)
-    
-    # Assert
-    assert isinstance(embeddings, list)
+
     assert len(embeddings) == len(texts)
-    assert all(len(emb) == 384 for emb in embeddings)  # MiniLM dimensions
+    assert all(len(emb) == 384 for emb in embeddings)
     assert all(isinstance(val, float) for emb in embeddings for val in emb)
-
-
-def test_embedder_error_handling():
-    """Test that embedder handles errors gracefully.
     
-    Verifies that the embedder provides meaningful error messages
-    when encountering invalid inputs or model failures.
-    """
-    # Arrange
-    embedder = get_embedder()
+    # Check similarity across different text relationships
+    import math
     
-    # Test with None input - should handle gracefully
-    with pytest.raises((ValueError, TypeError, AttributeError)):
-        embedder.embed_text(None)
+    def cosine_similarity(emb1, emb2):
+        return sum(a*b for a,b in zip(emb1, emb2)) / (math.sqrt(sum(a*a for a in emb1)) * math.sqrt(sum(b*b for b in emb2)))
     
-    # Test with invalid type
-    with pytest.raises((ValueError, TypeError, AttributeError)):
-        embedder.embed_text(123)  # Should not accept numbers
+    # Test similar sentences (indices 0-1)
+    sim_0_1 = cosine_similarity(embeddings[0], embeddings[1])
+    
+    # Test fox sentences (indices 3-4) - should be very similar
+    sim_3_4 = cosine_similarity(embeddings[3], embeddings[4])
+    
+    # Test cross-domain similarities (should be lower)
+    sim_0_3 = cosine_similarity(embeddings[0], embeddings[3])  # test vs fox
+    
+    print(f"Similar pairs:")
+    print(f"  Test sentences (0-1): {sim_0_1:.3f}")
+    print(f"  Fox sentences (3-4): {sim_3_4:.3f}")
+    print(f"Cross-domain pairs:")
+    print(f"  Test vs Fox (0-3): {sim_0_3:.3f}")
+    
+    # Assertions for semantic relationships
+    assert sim_0_1 > 0.7, "Similar test sentences should have high similarity"
+    assert sim_3_4 > 0.7, "Similar fox sentences should have high similarity"
+    
+    # Cross-domain should be lower than within-domain
+    assert sim_0_1 > sim_0_3, "Similar test sentences should be more similar than cross-domain"
