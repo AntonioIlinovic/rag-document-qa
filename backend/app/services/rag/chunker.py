@@ -5,12 +5,38 @@ RecursiveCharacterTextSplitter to create overlapping chunks suitable
 for embedding and retrieval.
 """
 
+from abc import ABC, abstractmethod
 from typing import List
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
-class TextChunker:
-    """Handles text chunking for RAG pipeline.
+class BaseChunker(ABC):
+    """Abstract base class for text chunking strategies.
+    
+    Defines the interface for all text chunking implementations,
+    enabling the Strategy pattern for interchangeable chunking algorithms.
+    """
+    
+    @abstractmethod
+    def chunk_text(self, text: str, chunk_size: int, chunk_overlap: int) -> List[str]:
+        """Split text into overlapping chunks.
+        
+        Args:
+            text: The input text to chunk
+            chunk_size: Maximum size of each chunk in characters
+            chunk_overlap: Number of characters to overlap between chunks
+            
+        Returns:
+            List of text chunks
+            
+        Raises:
+            ValueError: If chunk_size or chunk_overlap are invalid
+        """
+        pass
+
+
+class LangChainChunker(BaseChunker):
+    """LangChain-based text chunking implementation.
     
     Uses LangChain's RecursiveCharacterTextSplitter to intelligently
     split text into overlapping chunks while preserving semantic
@@ -59,14 +85,15 @@ class TextChunker:
         return [chunk.strip() for chunk in chunks if chunk.strip()]
 
 
-def get_chunker() -> TextChunker:
-    """Factory function to create a TextChunker instance.
+def get_chunker() -> BaseChunker:
+    """Factory function to create a chunker instance.
     
     Returns:
-        Configured TextChunker instance
+        Configured BaseChunker implementation (LangChainChunker)
         
     Note:
         This factory pattern allows for easy dependency injection
         and testing by providing a single point of chunker creation.
+        Enables Strategy pattern for interchangeable chunking algorithms.
     """
-    return TextChunker()
+    return LangChainChunker()
