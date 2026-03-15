@@ -66,4 +66,4 @@ def test_factory_function_unsupported_type():
     """
     # Arrange & Act & Assert
     with pytest.raises(ValueError, match="Unsupported file type"):
-        get_extractor("test.txt")
+        get_extractor("test.xyz")

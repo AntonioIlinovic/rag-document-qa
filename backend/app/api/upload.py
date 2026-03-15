@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/upload", tags=["upload"])
 
 
-SUPPORTED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".tiff"}
+SUPPORTED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".tiff", ".txt", ".md"}
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
 
 
@@ -147,7 +147,7 @@ async def upload_documents(
 ) -> UploadResponse:
     """Upload and process documents for question answering.
     
-    Accepts one or more files (PDF, PNG, JPG, TIFF), extracts text,
+    Accepts one or more files (PDF, PNG, JPG, TIFF, TXT, MD), extracts text,
     creates embeddings, and stores in ChromaDB. Either creates a new
     session or adds to an existing one.
     

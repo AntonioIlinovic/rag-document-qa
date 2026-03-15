@@ -8,6 +8,7 @@ code from specific extractor implementations.
 from .base import BaseExtractor, ExtractionError
 from .pdf import PyMuPDFExtractor
 from .ocr import EasyOCRExtractor
+from .text import TextExtractor
 
 
 def get_extractor(filename: str) -> BaseExtractor:
@@ -36,7 +37,9 @@ def get_extractor(filename: str) -> BaseExtractor:
     """
     filename_lower = filename.lower()
     
-    if filename_lower.endswith('.pdf'):
+    if filename_lower.endswith('.txt') or filename_lower.endswith('.md'):
+        return TextExtractor()
+    elif filename_lower.endswith('.pdf'):
         return PyMuPDFExtractor()
     elif filename_lower.endswith(('.png', '.jpg', '.jpeg', '.tiff', '.tif')):
         return EasyOCRExtractor()
