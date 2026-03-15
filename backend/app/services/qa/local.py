@@ -19,7 +19,7 @@ class LocalQAEngine(BaseQAEngine):
     """
 
     NO_ANSWER_RESPONSE = "I cannot answer this question based on the provided context."
-    MIN_CONFIDENCE_THRESHOLD = 0.5
+    MIN_CONFIDENCE_THRESHOLD = 0.3
 
 
     def __init__(self, model_name: str = "distilbert-base-cased-distilled-squad"):

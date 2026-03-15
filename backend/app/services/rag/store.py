@@ -270,12 +270,14 @@ class ChromaDBStore(BaseVectorStore):
             raise RuntimeError(f"Failed to count documents in collection '{self.collection_name}': {e}")
 
 
-def get_store(persist_directory: Optional[str] = None) -> BaseVectorStore:
+def get_store(persist_directory: Optional[str] = None, collection_name: Optional[str] = None) -> BaseVectorStore:
     """Factory function to create a vector store instance.
 
     Args:
         persist_directory: Optional directory for ChromaDB persistence.
                            Defaults to APP_DATA_DIR/chroma env var.
+        collection_name: Optional collection name for ChromaDB.
+                         Defaults to random UUID if not provided.
 
     Returns:
         Configured BaseVectorStore implementation
@@ -284,4 +286,4 @@ def get_store(persist_directory: Optional[str] = None) -> BaseVectorStore:
         Additional providers (e.g. FAISS, Qdrant) can be added here in the
         future via a VECTOR_STORE_PROVIDER environment variable.
     """
-    return ChromaDBStore(persist_directory=persist_directory)
+    return ChromaDBStore(collection_name=collection_name, persist_directory=persist_directory)

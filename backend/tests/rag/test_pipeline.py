@@ -249,7 +249,10 @@ def test_get_pipeline_returns_rag_pipeline_instance(temp_app_data_dir):
         pipeline = get_pipeline(persist_directory=str(temp_app_data_dir / "chroma"))
 
         assert isinstance(pipeline, RAGPipeline)
-        mock_get_store.assert_called_once_with(persist_directory=str(temp_app_data_dir / "chroma"))
+        mock_get_store.assert_called_once_with(
+            persist_directory=str(temp_app_data_dir / "chroma"),
+            collection_name=None
+        )
 
 
 # ---------------------------------------------------------------------------

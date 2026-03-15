@@ -131,6 +131,7 @@ rag-document-qa/
 │   │       │   ├── chunker.py      # Text splitting logic
 │   │       │   ├── embedder.py     # ABC + SentenceTransformerEmbedder
 │   │       │   └── store.py        # ChromaDB vector store (save/load per session)
+│   │       │   └── pipeline.py     # RAG pipeline (extract → chunk → embed → store)
 │   │       ├── qa/
 │   │       │   ├── __init__.py
 │   │       │   ├── base.py         # ABC: BaseQAEngine
@@ -140,21 +141,39 @@ rag-document-qa/
 │   │
 │   ├── tests/
 │   │   ├── __init__.py
-│   │   ├── conftest.py             # Shared fixtures (test client, temp sessions)
+│   │   ├── conftest.py             # Shared fixtures
 │   │   ├── test_config.py          # Environment configuration tests
 │   │   ├── extraction/             # Document extraction tests
 │   │   │   ├── __init__.py
+│   │   │   ├── conftest.py
 │   │   │   ├── test_ocr_extraction.py
 │   │   │   └── test_pdf_extraction.py
 │   │   ├── rag/                    # RAG component tests
 │   │   │   ├── __init__.py
+│   │   │   ├── conftest.py
 │   │   │   ├── test_chunker.py
 │   │   │   ├── test_embedder.py
-│   │   │   └── test_store.py
-│   │   ├── test_qa.py              # QA engine tests (to be created)
-│   │   └── test_api.py             # Integration tests for endpoints (to be created)
+│   │   │   ├── test_store.py
+│   │   │   └── test_pipeline.py  
+│   │   ├── qa/                    # QA component tests
+│   │   │   ├── __init__.py
+│   │   │   └── test_qa.py
+│   │   └── test_api.py             
 │   │
-│   └── data/                       # Runtime storage: sessions, ChromaDB indexes (gitignored)
+│   └── app_data/         # Runtime storage: sessions, ChromaDB indexes (gitignored)
+│       └── sessions/
+│           └── <session_id>/
+│               ├── session.json
+│               ├── documents/
+│               │   ├── original/
+│               │   │   ├── doc1.pdf
+│               │   │   └── doc2.jpg
+│               │   └── extracted/   # Debug copies of extracted text (primary text stored in ChromaDB) - kept for easier verification of extraction results
+│               │       ├── doc1.txt
+│               │       └── doc2.txt
+│               └── chroma_db/          # Per-session ChromaDB
+│                   ├── chroma.sqlite3
+│                   └── {collection_name}/
 │
 └── frontend/                       # OPTIONAL: Streamlit UI (separate service)
     ├── Dockerfile
@@ -213,7 +232,7 @@ rag-document-qa/
 - Implement `session.py`:
   - `create_session() -> session_id` (UUID-based)
   - `get_session(session_id) -> SessionData` (extracted text, ChromaDB collection name, metadata)
-  - Store session state on disk under `data/{session_id}/`
+  - Store session state on disk under `app_data/sessions/{session_id}/`
 - Implement `POST /upload`:
   - Accept `multipart/form-data` with one or more files
   - Optional `session_id` param (create new if not provided)
@@ -232,7 +251,7 @@ rag-document-qa/
   - Install system deps for PyMuPDF and EasyOCR (`libgl1`, etc.)
   - Pre-download models in build stage for faster cold starts
 - Create `docker-compose.yml`:
-  - Backend service with volume mount for `data/`
+  - Backend service with volume mount for `app_data/sessions/`
   - Environment variables from `.env`
 - **Verify:** `docker compose up --build` → Swagger UI works → upload + ask works
 
@@ -279,7 +298,7 @@ rag-document-qa/
 
 ### Git Practices
 - Meaningful commit messages per phase
-- `.gitignore`: `.env`, `data/`, `__pycache__/`, `.venv/`, `*.pyc`, model caches
+- `.gitignore`: `.env`, `app_data/sessions/`, `__pycache__/`, `.venv/`, `*.pyc`, model caches
 
 ---
 
@@ -299,7 +318,6 @@ Response 200:
   "documents": [
     {
       "filename": "contract.pdf",
-      "pages": 12,
       "chunks": 47,
       "status": "processed"
     }

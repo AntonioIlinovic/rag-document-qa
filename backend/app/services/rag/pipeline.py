@@ -232,7 +232,7 @@ class RAGPipeline(BaseRAGPipeline):
         logger.info("Pipeline cleared — all documents deleted")
 
 
-def get_pipeline(persist_directory: Optional[str] = None) -> BaseRAGPipeline:
+def get_pipeline(persist_directory: Optional[str] = None, collection_name: Optional[str] = None) -> BaseRAGPipeline:
     """Factory function to create a fully wired RAGPipeline instance.
 
     All components are created via their own factory functions, which
@@ -241,6 +241,8 @@ def get_pipeline(persist_directory: Optional[str] = None) -> BaseRAGPipeline:
     Args:
         persist_directory: Optional directory for ChromaDB persistence.
                            Passed through to get_store().
+        collection_name: Optional collection name for ChromaDB.
+                         Passed through to get_store().
 
     Returns:
         Configured BaseRAGPipeline implementation
@@ -253,5 +255,5 @@ def get_pipeline(persist_directory: Optional[str] = None) -> BaseRAGPipeline:
     return RAGPipeline(
         chunker=get_chunker(),
         embedder=get_embedder(),
-        store=get_store(persist_directory=persist_directory),
+        store=get_store(persist_directory=persist_directory, collection_name=collection_name),
     )

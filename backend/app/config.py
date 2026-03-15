@@ -14,7 +14,8 @@ class Settings(BaseSettings):
     qa_engine: str = "local"  # cloud or local
 
     # Application Data Directory (runtime data storage, e.g. sessions, chromaDB, etc.)
-    app_data_dir: str = "app_data"
+    # Default to ../app_data to store at project root level
+    app_data_dir: str = "../app_data"
 
     model_config = SettingsConfigDict(
         env_file=str(Path(__file__).parent.parent.parent / ".env"),
