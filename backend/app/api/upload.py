@@ -47,19 +47,10 @@ def validate_file(file: UploadFile, app_settings: Settings) -> None:
     
     # Check file extension
     file_ext = file.filename.lower().rsplit(".", 1)[-1]
-    supported_extensions = app_settings.supported_extensions.split(",")
-    if f".{file_ext}" not in supported_extensions:
+    if file_ext not in app_settings.supported_extensions:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Unsupported file type: {file_ext}. Supported types: {', '.join(supported_extensions)}"
-        )
-    
-    # Check file size
-    if file.size and file.size > app_settings.max_file_size:
-        max_size_mb = app_settings.max_file_size // (1024*1024)
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"File too large. Maximum size: {max_size_mb}MB"
+            detail=f"Unsupported file type: {file_ext}. Supported types: {', '.join(app_settings.supported_extensions)}"
         )
 
 

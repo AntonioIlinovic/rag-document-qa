@@ -8,6 +8,7 @@ dependencies = [
     "streamlit>=1.39.0",
     "httpx>=0.28.1",
     "pandas>=2.0.0",
+    "pyyaml>=6.0.3",
 ]
 
 [tool.streamlit]

@@ -3,6 +3,7 @@ import time
 import traceback
 from typing import Dict, List, Optional, Tuple
 import uuid
+import yaml
 
 import httpx
 import pandas as pd
@@ -10,6 +11,24 @@ import streamlit as st
 
 # Configuration
 BACKEND_URL = os.getenv("BACKEND_URL")
+
+# Load shared configuration
+def load_shared_config():
+    """Load file upload configuration from shared_config.yaml."""
+    try:
+        config_path = os.path.join(os.path.dirname(__file__), "..", "shared_config.yaml")
+        with open(config_path, 'r') as f:
+            shared_config = yaml.safe_load(f)
+        return shared_config.get('file_upload', {})
+    except (FileNotFoundError, yaml.YAMLError, KeyError):
+        # Fallback to defaults if shared config is not available
+        return {
+            'supported_extensions': ["pdf", "png", "jpg", "jpeg", "tiff", "txt", "md"]
+        }
+
+# Load configuration at startup
+shared_config = load_shared_config()
+SUPPORTED_EXTENSIONS = shared_config.get('supported_extensions', [])
 
 # Initialize session state
 def init_session_state():
@@ -106,8 +125,8 @@ def render_sidebar(client: BackendClient):
     st.sidebar.subheader("📄 Document Upload")
     
     uploaded_files = st.sidebar.file_uploader(
-        "Upload documents (PDF, PNG, JPG, TIFF, TXT, MD)",
-        type=["pdf", "png", "jpg", "jpeg", "tiff", "txt", "md"],
+        f"Upload documents ({', '.join(SUPPORTED_EXTENSIONS).upper()})",
+        type=SUPPORTED_EXTENSIONS,
         accept_multiple_files=True,
         help="Upload one or more documents to analyze"
     )

@@ -1,0 +1,8 @@
+# Shared configuration between frontend and backend
+# This file eliminates duplication by providing a single source of truth
+# for configuration that needs to be shared across the application
+
+file_upload:
+  # Supported file extensions for document upload
+  # Used by both frontend (file uploader validation) and backend (processing)
+  supported_extensions: ["pdf", "png", "jpg", "jpeg", "tiff", "txt", "md"]

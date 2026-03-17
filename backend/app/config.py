@@ -1,5 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
+import yaml
+from typing import List
 
 class Settings(BaseSettings):
     """Application settings with Pydantic v2 configuration."""
@@ -13,9 +15,8 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     qa_engine: str = "local"  # cloud or local
 
-    # File Upload Configuration
-    supported_extensions: str = ".pdf,.png,.jpg,.jpeg,.tiff,.txt,.md"
-    max_file_size: int = 50 * 1024 * 1024  # 50MB in bytes
+    # File Upload Configuration (loaded from shared_config.yaml)
+    supported_extensions: List[str] = []
 
     # Application Data Directory (runtime data storage, e.g. sessions, chromaDB, etc.)
     # Default to ../app_data to store at project root level
@@ -25,5 +26,22 @@ class Settings(BaseSettings):
         env_file=str(Path(__file__).parent.parent / ".env"),
         env_file_encoding="utf-8"
     )
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._load_shared_config()
+
+    def _load_shared_config(self):
+        """Load file upload configuration from shared_config.yaml."""
+        try:
+            config_path = Path(__file__).parent.parent.parent / "shared_config.yaml"
+            with open(config_path, 'r') as f:
+                shared_config = yaml.safe_load(f)
+            
+            file_config = shared_config.get('file_upload', {})
+            self.supported_extensions = file_config.get('supported_extensions', [])
+        except (FileNotFoundError, yaml.YAMLError, KeyError):
+            # Fallback to defaults if shared config is not available
+            self.supported_extensions = ["pdf", "png", "jpg", "jpeg", "tiff", "txt", "md"]
 
 settings = Settings()
