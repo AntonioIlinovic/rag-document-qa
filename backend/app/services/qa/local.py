@@ -3,7 +3,7 @@ import logging
 from typing import List
 
 import torch
-from transformers import pipeline, AutoModelForQuestionAnswering, AutoTokenizer
+from transformers import pipeline
 
 from .base import BaseQAEngine
 
@@ -48,23 +48,14 @@ class LocalQAEngine(BaseQAEngine):
 
         try:
             self._pipeline = pipeline(
-                "document-question-answering",
+                "question-answering",
                 model=self.model_name,
                 device=device,
             )
+            logger.info("QA model loaded successfully")
         except Exception as e:
-            try:
-                logger.warning(f"Standard pipeline load failed, falling back to explicit model load: {e}")
-                self._pipeline = pipeline(
-                    "document-question-answering",
-                    model=AutoModelForQuestionAnswering.from_pretrained(self.model_name),
-                    tokenizer=AutoTokenizer.from_pretrained(self.model_name),
-                    device=device,
-                )
-            except Exception as fallback_error:
-                raise RuntimeError(f"Failed to load QA model '{self.model_name}': {fallback_error}")
+            raise RuntimeError(f"Failed to load QA model '{self.model_name}': {e}")
 
-        logger.info("QA model loaded successfully")
         return self._pipeline
 
     def _run_inference(self, question: str, context_chunks: List[str]) -> str:
