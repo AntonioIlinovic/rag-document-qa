@@ -6,13 +6,13 @@ from .base import BaseQAEngine
 class CloudQAEngine(BaseQAEngine):
     """OpenAI-based question answering engine."""
     
-    def __init__(self, api_key: str, model: str = "gpt-3.5-turbo"):
+    def __init__(self, api_key: str, model: str = "gpt-4o-mini"):
         """
         Initialize the OpenAI QA engine.
         
         Args:
             api_key: OpenAI API key
-            model: OpenAI model to use (default: gpt-3.5-turbo)
+            model: OpenAI model to use (default: gpt-4o-mini)
         """
         if not api_key:
             raise ValueError("OpenAI API key is required for CloudQAEngine")
