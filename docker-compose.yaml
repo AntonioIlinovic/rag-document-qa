@@ -8,4 +8,16 @@ services:
     volumes:
       - ./backend:/app  # For development - enables hot reload
       - ./app_data:/app/app_data  # Mount root-level app_data
-    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8501:8501"
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - backend

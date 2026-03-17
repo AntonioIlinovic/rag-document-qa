@@ -13,12 +13,16 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     qa_engine: str = "local"  # cloud or local
 
+    # File Upload Configuration
+    supported_extensions: str = ".pdf,.png,.jpg,.jpeg,.tiff,.txt,.md"
+    max_file_size: int = 50 * 1024 * 1024  # 50MB in bytes
+
     # Application Data Directory (runtime data storage, e.g. sessions, chromaDB, etc.)
     # Default to ../app_data to store at project root level
     app_data_dir: str = "../app_data"
 
     model_config = SettingsConfigDict(
-        env_file=str(Path(__file__).parent.parent.parent / ".env"),
+        env_file=str(Path(__file__).parent.parent / ".env"),
         env_file_encoding="utf-8"
     )
 

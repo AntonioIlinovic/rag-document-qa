@@ -87,7 +87,8 @@ async def ask_question(
         sources = [
             SourceChunk(
                 chunk=result["chunk"],
-                score=float(result.get("score", 0.0))
+                score=float(result.get("score", 0.0)),
+                metadata=result.get("metadata", {})
             )
             for result in search_results
         ]
@@ -96,7 +97,8 @@ async def ask_question(
         
         return AskResponse(
             answer=answer,
-            sources=sources
+            sources=sources,
+            qa_engine=qa_engine.get_engine_name()
         )
         
     except HTTPException:

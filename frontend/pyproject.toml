@@ -1,0 +1,16 @@
+[project]
+name = "frontend"
+version = "0.1.0"
+description = "Streamlit frontend for RAG Document QA"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "streamlit>=1.39.0",
+    "httpx>=0.28.1",
+    "pandas>=2.0.0",
+]
+
+[tool.streamlit]
+page_title = "RAG Document QA"
+page_icon = "📚"
+layout = "wide"

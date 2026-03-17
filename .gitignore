@@ -219,3 +219,6 @@ GEMINI.md
 
 # RAG Document QA app_data (runtime storage)
 app_data/
+
+# Jupyter testing notebooks
+/notebooks

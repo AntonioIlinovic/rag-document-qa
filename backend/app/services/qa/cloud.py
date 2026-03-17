@@ -62,3 +62,11 @@ Answer:"""
             raise Exception(f"OpenAI API error: {e}")
         except Exception as e:
             raise Exception(f"Error generating answer: {e}")
+    
+    def get_engine_name(self) -> str:
+        """Get the name of the QA engine for display purposes.
+        
+        Returns:
+            Engine name as a string
+        """
+        return f"OpenAI ({self.model})"

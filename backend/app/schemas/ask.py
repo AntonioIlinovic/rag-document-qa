@@ -25,6 +25,7 @@ class SourceChunk(BaseModel):
     """
     chunk: str = Field(..., description="Text chunk used as context for the answer")
     score: float = Field(..., description="Relevance score (0.0 to 1.0) indicating similarity to question")
+    metadata: dict = Field(default={}, description="Optional metadata about the source chunk")
 
 
 class AskResponse(BaseModel):
@@ -35,3 +36,4 @@ class AskResponse(BaseModel):
     """
     answer: str = Field(..., description="Generated answer to the question")
     sources: List[SourceChunk] = Field(..., description="Source text chunks used to generate the answer")
+    qa_engine: str = Field(..., description="Name of the QA engine used to generate the answer")

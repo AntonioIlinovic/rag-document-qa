@@ -119,3 +119,11 @@ class LocalQAEngine(BaseQAEngine):
             return self.NO_ANSWER_RESPONSE
 
         return await asyncio.to_thread(self._run_inference, question, context_chunks)
+    
+    def get_engine_name(self) -> str:
+        """Get the name of the QA engine for display purposes.
+        
+        Returns:
+            Engine name as a string
+        """
+        return f"Local ({self.model_name})"

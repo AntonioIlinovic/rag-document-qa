@@ -16,14 +16,12 @@ from app.services.extraction import get_extractor
 from app.services.extraction.base import ExtractionError
 from app.services.rag.pipeline import BaseRAGPipeline
 from app.services.session.models import SessionData
-from app.services.session.service import (
+from app.services.session import (
     add_document_to_session,
     create_session,
     get_session,
     get_pipeline_for_session
 )
-from app.services.session import create_session as session_create_session
-from app.services.session import get_pipeline_for_session as session_get_pipeline_for_session
 from .deps import get_settings
 
 logger = logging.getLogger(__name__)
@@ -31,15 +29,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/upload", tags=["upload"])
 
 
-SUPPORTED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".tiff", ".txt", ".md"}
-MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
-
-
-def validate_file(file: UploadFile) -> None:
+def validate_file(file: UploadFile, app_settings: Settings) -> None:
     """Validate uploaded file.
     
     Args:
         file: UploadFile object to validate
+        app_settings: Application settings containing file upload configuration
         
     Raises:
         HTTPException: If file is invalid (unsupported type, too large, etc.)
@@ -52,17 +47,19 @@ def validate_file(file: UploadFile) -> None:
     
     # Check file extension
     file_ext = file.filename.lower().rsplit(".", 1)[-1]
-    if f".{file_ext}" not in SUPPORTED_EXTENSIONS:
+    supported_extensions = app_settings.supported_extensions.split(",")
+    if f".{file_ext}" not in supported_extensions:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Unsupported file type: {file_ext}. Supported types: {', '.join(SUPPORTED_EXTENSIONS)}"
+            detail=f"Unsupported file type: {file_ext}. Supported types: {', '.join(supported_extensions)}"
         )
     
     # Check file size
-    if file.size and file.size > MAX_FILE_SIZE:
+    if file.size and file.size > app_settings.max_file_size:
+        max_size_mb = app_settings.max_file_size // (1024*1024)
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"File too large. Maximum size: {MAX_FILE_SIZE // (1024*1024)}MB"
+            detail=f"File too large. Maximum size: {max_size_mb}MB"
         )
 
 
@@ -87,6 +84,9 @@ async def process_single_file(
         HTTPException: If processing fails
     """
     try:
+        # Validate file first
+        validate_file(file, app_settings)
+        
         # Read file bytes
         file_bytes = await file.read()
         
@@ -170,14 +170,14 @@ async def upload_documents(
     
     # Validate all files first
     for file in files:
-        validate_file(file)
+        validate_file(file, app_settings)
     
     # Determine session ID and get pipeline
     if session_id:
         # Use existing session
         try:
             get_session(session_id)  # Validate session exists
-            pipeline = session_get_pipeline_for_session(session_id)
+            pipeline = get_pipeline_for_session(session_id)
         except Exception as exc:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -185,8 +185,8 @@ async def upload_documents(
             ) from exc
     else:
         # Create new session
-        session_id = session_create_session()
-        pipeline = session_get_pipeline_for_session(session_id)
+        session_id = create_session()
+        pipeline = get_pipeline_for_session(session_id)
     
     # Process each file
     processed_documents = []

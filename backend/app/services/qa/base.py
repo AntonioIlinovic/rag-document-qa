@@ -18,3 +18,13 @@ class BaseQAEngine(ABC):
             Generated answer as a string
         """
         pass
+    
+    @abstractmethod
+    def get_engine_name(self) -> str:
+        """
+        Get the name of the QA engine for display purposes.
+        
+        Returns:
+            Engine name as a string
+        """
+        pass

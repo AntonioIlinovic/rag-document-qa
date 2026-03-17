@@ -10,11 +10,18 @@ Public API:
 - get_pipeline_for_session(session_id) -> RAGPipeline
 """
 
-from .service import create_session, get_session, delete_session, get_pipeline_for_session
+from .service import (
+    create_session, 
+    get_session, 
+    delete_session, 
+    get_pipeline_for_session,
+    add_document_to_session
+)
 
 __all__ = [
     "create_session",
     "get_session", 
     "delete_session",
     "get_pipeline_for_session",
+    "add_document_to_session",
 ]

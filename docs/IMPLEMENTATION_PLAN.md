@@ -92,13 +92,14 @@ For each key technology, options are listed with a **recommended** pick.
 
 ```
 rag-document-qa/
-├── .env.example                    # Example env vars (committed)
 ├── .gitignore
 ├── docker-compose.yml              # Orchestrates backend (+ optional frontend)
 ├── README.md                       # Setup, usage, approach description
 ├── dummy_docs/                     # Sample PDFs/images for testing & demo
-│
+
 ├── backend/
+│   ├── .env                         # Backend environment variables (gitignored)
+│   ├── .env.example                 # Example backend env vars (committed)
 │   ├── Dockerfile
 │   ├── pyproject.toml              # uv-managed dependencies
 │   ├── uv.lock
@@ -176,6 +177,8 @@ rag-document-qa/
 │                   └── {collection_name}/
 │
 └── frontend/                       # OPTIONAL: Streamlit UI (separate service)
+    ├── .env                         # Frontend environment variables (gitignored)
+    ├── .env.example                 # Example frontend env vars (committed)
     ├── Dockerfile
     ├── pyproject.toml
     └── app.py
