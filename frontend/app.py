@@ -41,6 +41,8 @@ def init_session_state():
         st.session_state.documents = []
     if "processing" not in st.session_state:
         st.session_state.processing = False
+    if "file_uploader_key" not in st.session_state:
+        st.session_state.file_uploader_key = 0
 
 # API client functions
 class BackendClient:
@@ -128,7 +130,8 @@ def render_sidebar(client: BackendClient):
         f"Upload documents ({', '.join(SUPPORTED_EXTENSIONS).upper()})",
         type=SUPPORTED_EXTENSIONS,
         accept_multiple_files=True,
-        help="Upload one or more documents to analyze"
+        help="Upload one or more documents to analyze",
+        key=f"file_uploader_{st.session_state.file_uploader_key}"
     )
     
     if uploaded_files and st.sidebar.button("📤 Upload Documents", type="primary"):
@@ -152,6 +155,8 @@ def render_sidebar(client: BackendClient):
                     })
                 
                 st.sidebar.success(f"✅ Uploaded {len(uploaded_files)} documents")
+                # Clear the file uploader by incrementing the key
+                st.session_state.file_uploader_key += 1
                 st.rerun()
                 
             except Exception as e:
