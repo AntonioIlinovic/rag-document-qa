@@ -10,6 +10,7 @@ services:
       - ./app_data:/app/app_data  # Mount root-level app_data
     env_file:
       - ./backend/.env
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
   frontend:
     build:
@@ -17,7 +18,10 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8501:8501"
+    volumes:
+      - ./frontend:/app  # For development - enables hot reload
     env_file:
       - ./frontend/.env
     depends_on:
       - backend
+    command: ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true", "--server.fileWatcherType=watchdog"]
