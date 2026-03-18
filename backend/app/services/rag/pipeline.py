@@ -90,6 +90,15 @@ class BaseRAGPipeline(ABC):
         """
         pass
 
+    @abstractmethod
+    def get_embedding_model_name(self) -> str:
+        """Get the name of the embedding model used.
+
+        Returns:
+            The embedding model name (e.g., "all-MiniLM-L6-v2")
+        """
+        pass
+
 
 class RAGPipeline(BaseRAGPipeline):
     """Concrete RAG pipeline combining chunking, embedding, and vector storage.
@@ -230,6 +239,14 @@ class RAGPipeline(BaseRAGPipeline):
         """
         self._store.delete_collection()
         logger.info("Pipeline cleared — all documents deleted")
+
+    def get_embedding_model_name(self) -> str:
+        """Get the name of the embedding model used.
+
+        Returns:
+            The embedding model name (e.g., "all-MiniLM-L6-v2")
+        """
+        return self._embedder.model_name
 
 
 def get_pipeline(persist_directory: Optional[str] = None, collection_name: Optional[str] = None) -> BaseRAGPipeline:

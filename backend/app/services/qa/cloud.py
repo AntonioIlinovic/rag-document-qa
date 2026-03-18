@@ -70,3 +70,11 @@ Answer:"""
             Engine name as a string
         """
         return f"OpenAI ({self.model})"
+    
+    def get_model_name(self) -> str:
+        """Get the name of the QA model used.
+        
+        Returns:
+            Model name as a string
+        """
+        return self.model

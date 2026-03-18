@@ -28,3 +28,13 @@ class BaseQAEngine(ABC):
             Engine name as a string
         """
         pass
+
+    @abstractmethod
+    def get_model_name(self) -> str:
+        """
+        Get the name of the QA model used.
+        
+        Returns:
+            Model name as a string
+        """
+        pass

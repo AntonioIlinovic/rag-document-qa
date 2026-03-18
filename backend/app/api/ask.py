@@ -98,7 +98,9 @@ async def ask_question(
         return AskResponse(
             answer=answer,
             sources=sources,
-            qa_engine=qa_engine.get_engine_name()
+            qa_engine=qa_engine.get_engine_name(),
+            qa_model=qa_engine.get_model_name(),
+            embedding_model=pipeline.get_embedding_model_name()
         )
         
     except HTTPException:

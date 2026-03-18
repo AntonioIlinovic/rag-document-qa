@@ -24,7 +24,7 @@ class SourceChunk(BaseModel):
     the answer, along with its relevance score.
     """
     chunk: str = Field(..., description="Text chunk used as context for the answer")
-    score: float = Field(..., description="Relevance score (0.0 to 1.0) indicating similarity to question")
+    score: float = Field(..., description="Semantic similarity between the question embedding and this chunk's embedding (cosine similarity, 0.0–1.0)")
     metadata: dict = Field(default={}, description="Optional metadata about the source chunk")
 
 
@@ -37,3 +37,5 @@ class AskResponse(BaseModel):
     answer: str = Field(..., description="Generated answer to the question")
     sources: List[SourceChunk] = Field(..., description="Source text chunks used to generate the answer")
     qa_engine: str = Field(..., description="Name of the QA engine used to generate the answer")
+    qa_model: str = Field(..., description="Name of the QA model used to generate the answer")
+    embedding_model: str = Field(..., description="Name of the embedding model used for retrieval")

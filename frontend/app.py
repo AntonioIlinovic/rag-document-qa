@@ -94,6 +94,59 @@ class BackendClient:
             return response.json()
 
 # UI Components
+def render_answer_details(answer_data: dict):
+    """Renders the collapsible details block for an assistant message."""
+    if not answer_data:
+        return
+    
+    sources = answer_data.get("sources", [])
+    qa_model = answer_data.get("qa_model", "Unknown")
+    embedding_model = answer_data.get("embedding_model", "Unknown")
+    processing_time = answer_data.get("processing_time")
+    
+    # Single expander for details
+    with st.expander("How was this answer retrieved?", expanded=False):
+        # Processing info
+        if processing_time is not None:
+            st.caption(f"Processing time: {processing_time:.1f}s")
+        
+        # Models used section
+        st.caption(f"Embedding model: {embedding_model}")
+        st.caption(f"QA model: {qa_model}")
+        
+        # Per-chunk nested expanders
+        for i, source in enumerate(sources, 1):
+            score = source.get("score", 0.0)
+            chunk = source.get("chunk", "")
+            metadata = source.get("metadata", {})
+            
+            # Color indicator logic
+            if score >= 0.8:
+                color_indicator = "🟢"
+            elif score >= 0.6:
+                color_indicator = "🟡"
+            else:
+                color_indicator = "🔴"
+            
+            # Extract filename and page from metadata
+            filename = metadata.get('filename', 'Unknown')
+            page = metadata.get('page')
+            page_text = f"p.{page}" if page else ""
+            
+            expander_label = f"Chunk {i} — {filename}"
+            if page_text:
+                expander_label += f"  ({page_text})"
+            expander_label += f"  ·  similarity {score:.3f}  {color_indicator}"
+            
+            with st.expander(expander_label, expanded=False):
+                st.markdown(chunk)
+                
+                # Source info
+                st.caption(f"File: {filename}")
+                if page:
+                    st.caption(f"Page: {page}")
+                st.caption(f"Cosine similarity to your question: {score:.3f}")
+
 def render_sidebar(client: BackendClient):
     """Render the sidebar with document upload and session management."""
     st.sidebar.title("📚 RAG Document QA")
@@ -111,11 +164,11 @@ def render_sidebar(client: BackendClient):
     
     # Join existing session
     if st.session_state.session_id:
-        st.sidebar.info(f"Current Session: {st.session_state.session_id[:8]}...")
-        if st.sidebar.button("📋 Copy Session ID"):
-            st.sidebar.write(st.session_state.session_id)
+        st.sidebar.info(f"Current Session: {st.session_state.session_id}")
+        if st.sidebar.button("Copy Session ID"):
+            st.experimental_copy(st.session_state.session_id)
     else:
-        st.sidebar.info("💡 Upload documents to create a new session, or enter an existing session ID below:")
+        st.sidebar.info("Upload documents to create a new session, or enter an existing session ID below:")
         session_input = st.sidebar.text_input("Or enter existing session ID:")
         if session_input and st.sidebar.button("Join Session"):
             st.session_state.session_id = session_input.strip()
@@ -124,7 +177,7 @@ def render_sidebar(client: BackendClient):
             st.rerun()
     
     # Document upload (always visible)
-    st.sidebar.subheader("📄 Document Upload")
+    st.sidebar.subheader("Document Upload")
     
     uploaded_files = st.sidebar.file_uploader(
         f"Upload documents ({', '.join(SUPPORTED_EXTENSIONS).upper()})",
@@ -134,7 +187,7 @@ def render_sidebar(client: BackendClient):
         key=f"file_uploader_{st.session_state.file_uploader_key}"
     )
     
-    if uploaded_files and st.sidebar.button("📤 Upload Documents", type="primary"):
+    if uploaded_files and st.sidebar.button("Upload Documents", type="primary"):
         with st.sidebar.spinner("Processing documents..."):
             try:
                 files = [f.getvalue() for f in uploaded_files]
@@ -154,7 +207,6 @@ def render_sidebar(client: BackendClient):
                         "status": doc["status"]
                     })
                 
-                st.sidebar.success(f"✅ Uploaded {len(uploaded_files)} documents")
                 # Clear the file uploader by incrementing the key
                 st.session_state.file_uploader_key += 1
                 st.rerun()
@@ -164,12 +216,12 @@ def render_sidebar(client: BackendClient):
     
     # Display uploaded documents
     if st.session_state.documents:
-        st.sidebar.subheader("📋 Uploaded Documents")
+        st.sidebar.subheader("Uploaded Documents")
         
         doc_df = pd.DataFrame(st.session_state.documents)
         st.sidebar.dataframe(doc_df, width='stretch')
         
-        if st.sidebar.button("🗑️ Clear All Documents"):
+        if st.sidebar.button("Clear All Documents"):
             st.session_state.documents = []
             st.session_state.chat_messages = []
             st.rerun()
@@ -177,17 +229,22 @@ def render_sidebar(client: BackendClient):
 
 def render_chat_interface(client: BackendClient):
     """Render the main chat interface."""
-    st.title("💬 Document Q&A Chat")
-    
     # Check if session exists
     if not st.session_state.session_id:
-        st.info("👆 Please create or join a session in the sidebar to start chatting")
+        st.info("Please create or join a session in the sidebar to start chatting")
         return
     
     # Check if documents are uploaded
     if not st.session_state.documents:
-        st.info("📄 Please upload some documents in the sidebar to start asking questions")
+        st.info("Please upload some documents in the sidebar to start asking questions")
         return
+    
+    # Display welcome message always
+    st.markdown("""
+    ## 👋 Welcome to RAG Document QA!
+    
+    Start by asking a question about your uploaded documents. I'll search through them and provide answers based on the content.
+    """)
     
     # Display chat messages
     for message in st.session_state.chat_messages:
@@ -195,79 +252,12 @@ def render_chat_interface(client: BackendClient):
             if message["role"] == "user":
                 st.write(message["content"])
             else:
-                # Assistant message
+                # Assistant message - just show the answer text
                 st.write(message["content"])
                 
-                # Add detailed view for assistant messages
+                # Add the collapsible details section
                 if "details" in message and message["details"]:
-                    answer_data = message["details"]
-                    question = message.get("question", "")
-                    
-                    # Show answer again in detailed view
-                    st.subheader("💬 Answer")
-                    st.write(message["content"])
-                    
-                    # Processing metrics - question in its own row
-                    st.subheader("📊 Query Processing")
-                    st.markdown(f"**Question:** {question}")
-                    
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.metric("Sources Used", len(answer_data.get("sources", [])))
-                    
-                    with col2:
-                        processing_time = answer_data.get("processing_time", 1.2)
-                        st.metric("Processing Time", f"{processing_time:.1f}s")
-                    
-                    # Source chunks
-                    if answer_data.get("sources"):
-                        st.subheader("📚 Source Chunks Used")
-                        
-                        for i, source in enumerate(answer_data["sources"], 1):
-                            score = source.get("score", 0.0)
-                            chunk = source.get("chunk", "")
-                            
-                            # Determine confidence level
-                            if score >= 0.8:
-                                confidence_color = "🟢"
-                                confidence_text = "High"
-                            elif score >= 0.6:
-                                confidence_color = "🟡"
-                                confidence_text = "Medium"
-                            else:
-                                confidence_color = "🔴"
-                                confidence_text = "Low"
-                            
-                            with st.expander(f"Chunk {i} (Score: {score:.3f}) {confidence_color} {confidence_text}", expanded=True):
-                                st.markdown(chunk)
-                                
-                                # Source info (if available)
-                                if "metadata" in source:
-                                    metadata = source["metadata"]
-                                    st.caption(f"📄 Source: {metadata.get('filename', 'Unknown')}")
-                                    if "page" in metadata:
-                                        st.caption(f"📖 Page: {metadata['page']}")
-                    
-                    # Model information
-                    st.subheader("🤖 Model Response")
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.metric("QA Engine", answer_data.get("qa_engine", "Unknown"))
-                    
-                    with col2:
-                        scores = [s.get("score", 0.0) for s in answer_data.get("sources", [])]
-                        avg_score = sum(scores) / len(scores) if scores else 0.0
-                        
-                        if avg_score >= 0.8:
-                            confidence = "� High"
-                        elif avg_score >= 0.6:
-                            confidence = "� Medium"
-                        else:
-                            confidence = "🔴 Low"
-                        
-                        st.metric("Answer Confidence", confidence)
+                    render_answer_details(message["details"])
     
     # Chat input
     if prompt := st.chat_input("Ask a question about your documents..."):
@@ -299,8 +289,7 @@ def render_chat_interface(client: BackendClient):
                         # Add processing time to result for display
                         result["processing_time"] = processing_time
                         
-                        # Display answer prominently
-                        st.subheader("💬 Answer")
+                        # Display answer text directly (no header)
                         st.write(answer)
                         
                         # Add assistant message to chat history
@@ -311,72 +300,9 @@ def render_chat_interface(client: BackendClient):
                             "question": prompt
                         })
                         
-                        # Show detailed view
+                        # Show detailed view using the helper function
                         if sources:
-                            answer_data = result
-                            question = prompt
-                            
-                            # Processing metrics - question in its own row
-                            st.subheader("📊 Query Processing")
-                            st.markdown(f"**Question:** {question}")
-                            
-                            col1, col2 = st.columns(2)
-                            
-                            with col1:
-                                st.metric("Sources Used", len(answer_data.get("sources", [])))
-                            
-                            with col2:
-                                processing_time = answer_data.get("processing_time", 1.2)
-                                st.metric("Processing Time", f"{processing_time:.1f}s")
-                            
-                            # Source chunks
-                            if answer_data.get("sources"):
-                                st.subheader("📚 Source Chunks Used")
-                                
-                                for i, source in enumerate(answer_data["sources"], 1):
-                                    score = source.get("score", 0.0)
-                                    chunk = source.get("chunk", "")
-                                    
-                                    # Determine confidence level
-                                    if score >= 0.8:
-                                        confidence_color = "🟢"
-                                        confidence_text = "High"
-                                    elif score >= 0.6:
-                                        confidence_color = "🟡"
-                                        confidence_text = "Medium"
-                                    else:
-                                        confidence_color = "🔴"
-                                        confidence_text = "Low"
-                                    
-                                    with st.expander(f"Chunk {i} (Score: {score:.3f}) {confidence_color} {confidence_text}", expanded=True):
-                                        st.markdown(chunk)
-                                        
-                                        # Source info (if available)
-                                        if "metadata" in source:
-                                            metadata = source["metadata"]
-                                            st.caption(f"📄 Source: {metadata.get('filename', 'Unknown')}")
-                                            if "page" in metadata:
-                                                st.caption(f"📖 Page: {metadata['page']}")
-                            
-                            # Model information
-                            st.subheader("🤖 Model Response")
-                            col1, col2 = st.columns(2)
-                            
-                            with col1:
-                                st.metric("QA Engine", answer_data.get("qa_engine", "Unknown"))
-                            
-                            with col2:
-                                scores = [s.get("score", 0.0) for s in answer_data.get("sources", [])]
-                                avg_score = sum(scores) / len(scores) if scores else 0.0
-                                
-                                if avg_score >= 0.8:
-                                    confidence = "🟢 High"
-                                elif avg_score >= 0.6:
-                                    confidence = "🟡 Medium"
-                                else:
-                                    confidence = "🔴 Low"
-                                
-                                st.metric("Answer Confidence", confidence)
+                            render_answer_details(result)
                         
                     except httpx.HTTPStatusError as e:
                         error_msg = "❌ Sorry, I encountered an error processing your question."
@@ -432,15 +358,6 @@ def main():
     # Render layout
     render_sidebar(client)
     render_chat_interface(client)
-    
-    # Footer
-    st.markdown("---")
-    st.markdown(
-        "<div style='text-align: center; color: gray;'>"
-        "RAG Document QA • Powered by Streamlit & FastAPI"
-        "</div>",
-        unsafe_allow_html=True
-    )
 
 if __name__ == "__main__":
     main()

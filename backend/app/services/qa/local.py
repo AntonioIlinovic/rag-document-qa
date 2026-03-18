@@ -127,3 +127,11 @@ class LocalQAEngine(BaseQAEngine):
             Engine name as a string
         """
         return f"Local ({self.model_name})"
+    
+    def get_model_name(self) -> str:
+        """Get the name of the QA model used.
+        
+        Returns:
+            Model name as a string
+        """
+        return self.model_name
