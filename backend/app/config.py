@@ -1,7 +1,8 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
 import yaml
-from typing import List
+from typing import List, Union
+import os
 
 class Settings(BaseSettings):
     """Application settings with Pydantic v2 configuration."""
@@ -20,8 +21,8 @@ class Settings(BaseSettings):
     supported_extensions: List[str] = []
 
     # Application Data Directory (runtime data storage, e.g. sessions, chromaDB, etc.)
-    # Default to ../app_data to store at project root level
-    app_data_dir: str = "../app_data"
+    # Resolves relative to project root regardless of execution context
+    app_data_dir: Union[str, Path] = "./app_data"
 
     model_config = SettingsConfigDict(
         env_file=str(Path(__file__).parent.parent / ".env"),
@@ -30,8 +31,18 @@ class Settings(BaseSettings):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        # Resolve app_data_dir relative to project root
+        self._resolve_app_data_dir()
         self._load_shared_config()
 
+    def _resolve_app_data_dir(self):
+        """Resolve app_data_dir relative to project root regardless of execution context."""
+        # Get project root (go up from app/ -> backend/ -> project root)
+        base_dir = Path(__file__).resolve().parent.parent
+        
+        # Always default to app_data in project root
+        self.app_data_dir = base_dir / "app_data"
+    
     def _load_shared_config(self):
         """Load file upload configuration from shared_config.yaml."""
         try:

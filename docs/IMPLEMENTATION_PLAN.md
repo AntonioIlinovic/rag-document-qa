@@ -95,8 +95,10 @@ rag-document-qa/
 ├── .gitignore
 ├── docker-compose.yml              # Orchestrates backend (+ optional frontend)
 ├── README.md                       # Setup, usage, approach description
+├── shared_config.yaml              # Shared configuration for frontend and backend (e.g., supported file extensions)
+├── docs/                           # Documentation
 ├── dummy_docs/                     # Sample PDFs/images for testing & demo
-
+│
 ├── backend/
 │   ├── .env                         # Backend environment variables (gitignored)
 │   ├── .env.example                 # Example backend env vars (committed)
@@ -126,7 +128,8 @@ rag-document-qa/
 │   │       │   ├── __init__.py
 │   │       │   ├── base.py         # ABC: BaseExtractor
 │   │       │   ├── pdf.py          # PyMuPDFExtractor
-│   │       │   └── ocr.py          # EasyOCRExtractor
+│   │       │   ├── ocr.py          # EasyOCRExtractor
+│   │       │   └── text.py         # Text file extractor
 │   │       ├── rag/
 │   │       │   ├── __init__.py
 │   │       │   ├── chunker.py      # Text splitting logic
@@ -138,45 +141,58 @@ rag-document-qa/
 │   │       │   ├── base.py         # ABC: BaseQAEngine
 │   │       │   ├── cloud.py        # OpenAI / API-based QA
 │   │       │   └── local.py        # DistilBERT extractive QA
-│   │       └── session.py          # Session lifecycle (create, get, delete)
+│   │       └── session/              # Session lifecycle management
+│   │           ├── __init__.py
+│   │           ├── models.py       # Session data models
+│   │           ├── service.py      # Session service logic
+│   │           └── store.py        # Session storage interface
 │   │
-│   ├── tests/
-│   │   ├── __init__.py
-│   │   ├── conftest.py             # Shared fixtures
-│   │   ├── test_config.py          # Environment configuration tests
-│   │   ├── extraction/             # Document extraction tests
-│   │   │   ├── __init__.py
-│   │   │   ├── conftest.py
-│   │   │   ├── test_ocr_extraction.py
-│   │   │   └── test_pdf_extraction.py
-│   │   ├── rag/                    # RAG component tests
-│   │   │   ├── __init__.py
-│   │   │   ├── conftest.py
-│   │   │   ├── test_chunker.py
-│   │   │   ├── test_embedder.py
-│   │   │   ├── test_store.py
-│   │   │   └── test_pipeline.py  
-│   │   ├── qa/                    # QA component tests
-│   │   │   ├── __init__.py
-│   │   │   └── test_qa.py
-│   │   └── test_api.py             
-│   │
-│   └── app_data/         # Runtime storage: sessions, ChromaDB indexes (gitignored)
-│       └── sessions/
-│           └── <session_id>/
-│               ├── session.json
-│               ├── documents/
-│               │   ├── original/
-│               │   │   ├── doc1.pdf
-│               │   │   └── doc2.jpg
-│               │   └── extracted/   # Debug copies of extracted text (primary text stored in ChromaDB) - kept for easier verification of extraction results
-│               │       ├── doc1.txt
-│               │       └── doc2.txt
-│               └── chroma_db/          # Per-session ChromaDB
-│                   ├── chroma.sqlite3
-│                   └── {collection_name}/
+│   └── tests/
+│       ├── __init__.py
+│       ├── conftest.py             # Shared fixtures
+│       ├── test_config.py          # Environment configuration tests
+│       ├── extraction/             # Document extraction tests
+│       │   ├── __init__.py
+│       │   ├── conftest.py
+│       │   ├── test_ocr_extraction.py
+│       │   └── test_pdf_extraction.py
+│       ├── rag/                    # RAG component tests
+│       │   ├── __init__.py
+│       │   ├── conftest.py
+│       │   ├── test_chunker.py
+│       │   ├── test_embedder.py
+│       │   ├── test_store.py
+│       │   └── test_pipeline.py  
+│       ├── qa/                    # QA component tests
+│       │   ├── __init__.py
+│       │   └── test_qa.py
+│       ├── session/                # Session management tests
+│       │   ├── __init__.py
+│       │   ├── conftest.py
+│       │   └── test_session_service.py
+│       ├── test_integration.py     # Integration tests
+│       └── api/                    # API endpoint tests
+│           ├── __init__.py
+│           ├── conftest.py
+│           ├── test_upload.py
+│           └── test_ask.py
 │
-└── frontend/                       # OPTIONAL: Streamlit UI (separate service)
+├── app_data/         # Runtime storage: sessions, ChromaDB indexes (gitignored)
+│   └── sessions/
+│       └── <session_id>/
+│           ├── session.json
+│           ├── documents/
+│           │   ├── original/
+│           │   │   ├── doc1.pdf
+│           │   │   └── doc2.jpg
+│           │   └── extracted/   # Debug copies of extracted text (primary text stored in ChromaDB) - kept for easier verification of extraction results
+│           │       ├── doc1.txt
+│           │       └── doc2.txt
+│           └── chroma_db/          # Per-session ChromaDB
+│               ├── chroma.sqlite3
+│               └── {collection_name}/
+│
+└── frontend/                       # Streamlit UI (separate service)
     ├── .env                         # Frontend environment variables (gitignored)
     ├── .env.example                 # Example frontend env vars (committed)
     ├── Dockerfile

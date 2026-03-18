@@ -12,6 +12,8 @@ from typing import List, Dict, Any, Optional
 from pathlib import Path
 import logging
 
+from app.config import settings
+
 logger = logging.getLogger(__name__)
 
 
@@ -97,7 +99,7 @@ class ChromaDBStore(BaseVectorStore):
             RuntimeError: If ChromaDB client fails to initialize
         """
         self.collection_name = collection_name or f"collection_{uuid.uuid4().hex[:8]}"
-        self.persist_directory = persist_directory or str(Path(os.getenv("APP_DATA_DIR", "app_data")) / "chroma")
+        self.persist_directory = persist_directory or str(Path(settings.app_data_dir) / "chroma")
         self._client = None
         self._collection = None
         self._initialize_client()
