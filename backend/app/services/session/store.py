@@ -7,7 +7,7 @@ path utilities for session directory structure.
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from app.config import settings
 from .models import SessionData, SessionNotFoundError
@@ -108,6 +108,18 @@ def session_file_path(session_id: str) -> Path:
     return session_dir(session_id) / "session.json"
 
 
+def chat_file_path(session_id: str) -> Path:
+    """Get the chat history file path.
+    
+    Args:
+        session_id: UUID string identifying the session
+        
+    Returns:
+        Path to the chat.json file
+    """
+    return session_dir(session_id) / "chat.json"
+
+
 def load_session(session_id: str) -> SessionData:
     """Load session data from JSON file.
     
@@ -136,7 +148,7 @@ def load_session(session_id: str) -> SessionData:
         else:
             created_at = datetime.now()
         
-        # Reconstruct SessionData
+        # Reconstruct SessionData (chat messages loaded separately)
         from .models import DocumentMeta
         documents = [
             DocumentMeta(**doc_data) for doc_data in data.get('documents', [])
@@ -145,7 +157,8 @@ def load_session(session_id: str) -> SessionData:
         return SessionData(
             session_id=data['session_id'],
             created_at=created_at,
-            documents=documents
+            documents=documents,
+            chat_messages=[]  # Will be loaded separately when needed
         )
         
     except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
@@ -209,3 +222,89 @@ def delete_session_files(session_id: str) -> None:
     if session_path.exists():
         import shutil
         shutil.rmtree(session_path)
+
+
+def load_chat_history(session_id: str) -> List:
+    """Load chat history from JSON file.
+    
+    Args:
+        session_id: UUID string identifying the session
+        
+    Returns:
+        List of chat message dictionaries
+        
+    Raises:
+        SessionNotFoundError: If session doesn't exist
+    """
+    # Verify session exists first
+    if not session_exists(session_id):
+        raise SessionNotFoundError(f"Session {session_id} not found")
+    
+    chat_path = chat_file_path(session_id)
+    
+    if not chat_path.exists():
+        return []  # No chat history yet
+    
+    try:
+        with open(chat_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        # Convert timestamp strings back to datetime objects
+        messages = []
+        for msg_data in data:
+            timestamp_str = msg_data.get('timestamp')
+            if timestamp_str:
+                timestamp = datetime.fromisoformat(timestamp_str)
+            else:
+                timestamp = datetime.now()
+            
+            messages.append({
+                'role': msg_data['role'],
+                'content': msg_data['content'],
+                'timestamp': timestamp,
+                'details': msg_data.get('details')
+            })
+        
+        return messages
+        
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        # If chat file is corrupted, return empty list and log error
+        import logging
+        logging.error(f"Invalid chat data for {session_id}: {exc}")
+        return []
+
+
+def save_chat_history(session_id: str, messages: List) -> None:
+    """Save chat history to JSON file.
+    
+    Args:
+        session_id: UUID string identifying the session
+        messages: List of chat message dictionaries
+        
+    Raises:
+        SessionNotFoundError: If session doesn't exist
+        OSError: If file write fails
+    """
+    # Verify session exists first
+    if not session_exists(session_id):
+        raise SessionNotFoundError(f"Session {session_id} not found")
+    
+    chat_path = chat_file_path(session_id)
+    
+    # Ensure session directory exists before saving
+    ensure_session_dir(session_id)
+    
+    # Convert messages to JSON-serializable format
+    data = []
+    for msg in messages:
+        msg_data = {
+            'role': msg['role'],
+            'content': msg['content'],
+            'timestamp': msg['timestamp'].isoformat() if hasattr(msg['timestamp'], 'isoformat') else msg['timestamp'],
+        }
+        if msg.get('details') is not None:
+            msg_data['details'] = msg['details']
+        data.append(msg_data)
+    
+    with open(chat_path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)

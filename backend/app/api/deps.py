@@ -9,6 +9,7 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from app.config import Settings, settings
 from app.schemas.ask import AskRequest
+from app.schemas.chat import ChatMessageRequest
 from app.services.qa.base import BaseQAEngine
 from app.services.rag.pipeline import BaseRAGPipeline
 from app.services.session.models import SessionData, SessionNotFoundError
@@ -67,3 +68,45 @@ async def get_qa_engine(
     """Dependency to get QA engine based on configuration."""
     from app.services.qa import get_qa_engine
     return get_qa_engine(app_settings)
+
+
+async def get_session_from_path(session_id: str) -> SessionData:
+    """Dependency to validate and retrieve session data from path parameter.
+    
+    Args:
+        session_id: Session ID from URL path
+        
+    Returns:
+        SessionData object with session metadata
+        
+    Raises:
+        HTTPException: 404 if session not found
+    """
+    try:
+        return get_session(session_id)
+    except SessionNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Session {session_id} not found"
+        ) from exc
+
+
+async def get_session_from_chat_request(request: ChatMessageRequest) -> SessionData:
+    """Dependency to validate and retrieve session data from chat request.
+    
+    Args:
+        request: ChatMessageRequest containing session_id
+        
+    Returns:
+        SessionData object with session metadata
+        
+    Raises:
+        HTTPException: 404 if session not found
+    """
+    try:
+        return get_session(request.session_id)
+    except SessionNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Session {request.session_id} not found"
+        ) from exc

@@ -91,6 +91,46 @@ class BackendClient:
         except Exception:
             return {}
 
+    def save_chat_message(self, session_id: str, role: str, content: str, details: Dict = None) -> bool:
+        """Save a chat message to session history."""
+        try:
+            with httpx.Client(timeout=self.timeout) as client:
+                data = {
+                    "session_id": session_id,
+                    "role": role,
+                    "content": content
+                }
+                if details is not None:
+                    data["details"] = details
+                
+                response = client.post(f"{self.base_url}/chat/message", json=data, follow_redirects=True)
+                response.raise_for_status()
+                return True
+        except Exception:
+            return False
+
+    def load_chat_history(self, session_id: str) -> List[Dict]:
+        """Load chat history for a session."""
+        try:
+            with httpx.Client(timeout=self.timeout) as client:
+                response = client.get(f"{self.base_url}/chat/history/{session_id}")
+                response.raise_for_status()
+                data = response.json()
+                
+                # Convert API response to frontend format
+                messages = []
+                for msg in data.get("messages", []):
+                    message = {
+                        "role": msg["role"],
+                        "content": msg["content"],
+                        "details": msg.get("details")
+                    }
+                    messages.append(message)
+                
+                return messages
+        except Exception:
+            return []
+
 
 @st.cache_data(ttl=30)
 def get_sessions_cached(_client: BackendClient) -> List[Dict]:
@@ -102,13 +142,17 @@ def get_sessions_cached(_client: BackendClient) -> List[Dict]:
 def switch_session(session_id: str, client: BackendClient):
     """Load a past session into state."""
     st.session_state.session_id = session_id
-    st.session_state.chat_messages = []
     st.session_state.processing = False
+    
+    # Load documents
     details = client.load_session_details(session_id)
     st.session_state.documents = [
         {"filename": d["filename"], "chunks": d["chunks"], "status": d["status"]}
         for d in details.get("documents", [])
     ]
+    
+    # Load chat history
+    st.session_state.chat_messages = client.load_chat_history(session_id)
 
 
 def new_session():
@@ -284,6 +328,9 @@ def render_chat_interface(client: BackendClient):
         with st.chat_message("user"):
             st.write(prompt)
 
+        # Save user message to chat history
+        client.save_chat_message(st.session_state.session_id, "user", prompt)
+
         st.session_state.processing = True
 
         with st.chat_message("assistant"):
@@ -302,6 +349,14 @@ def render_chat_interface(client: BackendClient):
                         "details": result,
                     })
 
+                    # Save assistant message to chat history
+                    client.save_chat_message(
+                        st.session_state.session_id, 
+                        "assistant", 
+                        answer, 
+                        details=result
+                    )
+
                     if result.get("sources"):
                         render_answer_details(result)
 
@@ -309,6 +364,9 @@ def render_chat_interface(client: BackendClient):
                     msg = "❌ Sorry, I encountered an error processing your question."
                     st.write(msg)
                     st.session_state.chat_messages.append({"role": "assistant", "content": msg, "details": None})
+
+                    # Save error message to chat history
+                    client.save_chat_message(st.session_state.session_id, "assistant", msg)
 
                     if e.response.status_code == 404:
                         st.error("Session not found. Please create a new session.")
@@ -321,6 +379,9 @@ def render_chat_interface(client: BackendClient):
                     msg = "❌ Sorry, I encountered an unexpected error."
                     st.write(msg)
                     st.session_state.chat_messages.append({"role": "assistant", "content": msg, "details": None})
+
+                    # Save error message to chat history
+                    client.save_chat_message(st.session_state.session_id, "assistant", msg)
                     st.error(f"Error: {str(e)}")
                     if st.checkbox("Show traceback"):
                         st.code(traceback.format_exc())

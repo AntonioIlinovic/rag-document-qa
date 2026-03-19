@@ -9,6 +9,7 @@ from fastapi import APIRouter
 from .upload import router as upload_router
 from .ask import router as ask_router
 from .sessions import router as sessions_router
+from .chat import router as chat_router
 
 # Create main API router
 api_router = APIRouter()
@@ -17,3 +18,4 @@ api_router = APIRouter()
 api_router.include_router(upload_router)
 api_router.include_router(ask_router)
 api_router.include_router(sessions_router)
+api_router.include_router(chat_router)

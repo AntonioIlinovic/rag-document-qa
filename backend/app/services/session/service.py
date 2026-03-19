@@ -6,7 +6,7 @@ session creation, retrieval, deletion, and pipeline management.
 
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 from uuid import uuid4
 
 from app.services.rag.pipeline import get_pipeline, BaseRAGPipeline
@@ -17,7 +17,9 @@ from .store import (
     delete_session_files,
     chroma_dir,
     original_files_dir,
-    extracted_files_dir
+    extracted_files_dir,
+    load_chat_history,
+    save_chat_history
 )
 
 
@@ -173,3 +175,52 @@ def get_session_total_chunks(session_id: str) -> int:
     """
     session_data = load_session(session_id)
     return session_data.get_total_chunks()
+
+
+def add_chat_message(session_id: str, role: str, content: str, details: dict = None) -> None:
+    """Add a chat message to a session.
+    
+    Args:
+        session_id: UUID string identifying the session
+        role: Message role ("user" or "assistant")
+        content: Message content
+        details: Optional details for assistant messages (sources, models, etc.)
+        
+    Raises:
+        SessionNotFoundError: If session doesn't exist
+    """
+    # Verify session exists
+    load_session(session_id)  # Will raise SessionNotFoundError if not found
+    
+    # Load existing chat history
+    messages = load_chat_history(session_id)
+    
+    # Add new message
+    new_message = {
+        'role': role,
+        'content': content,
+        'timestamp': datetime.now(),
+        'details': details
+    }
+    messages.append(new_message)
+    
+    # Save updated chat history
+    save_chat_history(session_id, messages)
+
+
+def get_chat_history(session_id: str) -> List:
+    """Get chat history for a session.
+    
+    Args:
+        session_id: UUID string identifying the session
+        
+    Returns:
+        List of chat message dictionaries
+        
+    Raises:
+        SessionNotFoundError: If session doesn't exist
+    """
+    # Verify session exists
+    load_session(session_id)  # Will raise SessionNotFoundError if not found
+    
+    return load_chat_history(session_id)

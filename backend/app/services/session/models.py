@@ -7,7 +7,7 @@ service layer and HTTP layer.
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
 
@@ -18,6 +18,19 @@ class SessionNotFoundError(Exception):
     dependencies to return appropriate HTTP 404 responses.
     """
     pass
+
+
+@dataclass
+class ChatMessage:
+    """Chat message data structure.
+    
+    Represents a single chat message in the conversation history.
+    Matches the frontend chat message format exactly.
+    """
+    role: str  # "user" or "assistant"
+    content: str
+    timestamp: datetime
+    details: Optional[dict] = None  # For assistant messages with source info
 
 
 @dataclass
@@ -36,15 +49,20 @@ class DocumentMeta:
 class SessionData:
     """Internal session data structure.
     
-    Contains all session metadata and document information.
+    Contains all session metadata, document information, and chat history.
     Stored as JSON in app_data/sessions/{session_id}/session.json.
+    Chat history stored separately in app_data/sessions/{session_id}/chat.json.
     """
     session_id: str
     created_at: datetime
     documents: List[DocumentMeta]
+    chat_messages: List[ChatMessage] = None
     
     def __post_init__(self) -> None:
-        """Validate session ID format."""
+        """Validate session ID format and initialize chat messages."""
+        if self.chat_messages is None:
+            self.chat_messages = []
+        
         try:
             UUID(self.session_id)
         except ValueError as exc:
@@ -68,3 +86,23 @@ class SessionData:
     def get_total_chunks(self) -> int:
         """Get the total number of chunks across all documents."""
         return sum(doc.chunks for doc in self.documents)
+    
+    def add_chat_message(self, role: str, content: str, details: Optional[dict] = None) -> None:
+        """Add a chat message to the session.
+        
+        Args:
+            role: Message role ("user" or "assistant")
+            content: Message content
+            details: Optional details for assistant messages (sources, models, etc.)
+        """
+        message = ChatMessage(
+            role=role,
+            content=content,
+            timestamp=datetime.now(),
+            details=details
+        )
+        self.chat_messages.append(message)
+    
+    def get_chat_message_count(self) -> int:
+        """Get the total number of chat messages in the session."""
+        return len(self.chat_messages)
