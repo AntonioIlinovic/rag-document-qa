@@ -4,8 +4,17 @@ Defines Pydantic models for question-answering request/response validation
 and API documentation generation.
 """
 
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel, Field
+
+
+class NamedEntity(BaseModel):
+    """Represents a named entity extracted from the answer."""
+    text: str = Field(..., description="The entity text as it appears in the answer")
+    label: str = Field(..., description="Entity type (PERSON, ORG, GPE, etc.)")
+    start: int = Field(..., description="Character start position in the answer text")
+    end: int = Field(..., description="Character end position in the answer text")
+    confidence: float = Field(default=0.0, description="Confidence score for the entity detection")
 
 
 class AskRequest(BaseModel):
@@ -31,10 +40,11 @@ class SourceChunk(BaseModel):
 class AskResponse(BaseModel):
     """API response model for question-answering endpoint.
     
-    Returns the generated answer and the source chunks that were used
-    as context, providing transparency into the RAG process.
+    Returns the generated answer, source chunks, and optionally
+    named entities extracted from the answer.
     """
     answer: str = Field(..., description="Generated answer to the question")
+    entities: List[NamedEntity] = Field(default=[], description="Named entities extracted from the answer")
     sources: List[SourceChunk] = Field(..., description="Source text chunks used to generate the answer")
     qa_engine: str = Field(..., description="Name of the QA engine used to generate the answer")
     qa_model: str = Field(..., description="Name of the QA model used to generate the answer")

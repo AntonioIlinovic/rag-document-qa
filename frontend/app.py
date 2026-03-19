@@ -7,6 +7,9 @@ import yaml
 import httpx
 import streamlit as st
 
+# Import NER highlighting component
+from components.ner_highlighting import render_answer_with_entities
+
 # Configuration
 BACKEND_URL = os.getenv("BACKEND_URL")
 
@@ -315,9 +318,17 @@ def render_chat_interface(client: BackendClient):
 
     for message in st.session_state.chat_messages:
         with st.chat_message(message["role"]):
-            st.write(message["content"])
             if message["role"] == "assistant" and message.get("details"):
-                render_answer_details(message["details"])
+                # Use NER rendering if available
+                details = message["details"]
+                render_answer_with_entities(
+                    answer=message["content"],
+                    entities=details.get("entities", [])
+                )
+                if details.get("sources"):
+                    render_answer_details(details)
+            else:
+                st.write(message["content"])
 
     if prompt := st.chat_input("Ask a question about your documents..."):
         if st.session_state.processing:
@@ -341,7 +352,12 @@ def render_chat_interface(client: BackendClient):
                     result["processing_time"] = time.time() - start_time
 
                     answer = result.get("answer", "Sorry, I couldn't generate an answer.")
-                    st.write(answer)
+                    
+                    # Render answer with NER highlighting
+                    render_answer_with_entities(
+                        answer=answer,
+                        entities=result.get("entities", [])
+                    )
 
                     st.session_state.chat_messages.append({
                         "role": "assistant",

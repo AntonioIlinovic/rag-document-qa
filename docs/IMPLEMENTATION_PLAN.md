@@ -51,6 +51,13 @@ For each key technology, options are listed with a **recommended** pick.
 
 **Recommendation:** sentence-transformers with `all-MiniLM-L6-v2` — free, runs locally, good quality for this use case. Keeps the embedding step independent of the LLM choice.
 
+### Named Entity Recognition (NER)
+| Option | Pros | Cons |
+|--------|------|------|
+| **spaCy** ✅ | Lightweight, fast, well-documented, pure Python | Less accurate on complex domain-specific text |
+
+**Recommendation:** spaCy with `en_core_web_sm` model — fast, lightweight, and sufficient for most document QA use cases. Runs locally without external dependencies.
+
 ### Vector Store
 | Option | Pros | Cons |
 |--------|------|------|
@@ -124,6 +131,11 @@ rag-document-qa/
 │   │   │
 │   │   └── services/
 │   │       ├── __init__.py
+│   │       ├── ner/                      # NEW: NER service package
+│   │       │   ├── __init__.py
+│   │       │   ├── base.py              # Abstract base class
+│   │       │   ├── spacy_extractor.py   # SpaCy NER implementation
+│   │       │   └── factory.py           # NER service factory
 │   │       ├── extraction/
 │   │       │   ├── __init__.py
 │   │       │   ├── base.py         # ABC: BaseExtractor
@@ -163,6 +175,10 @@ rag-document-qa/
 │       │   ├── test_embedder.py
 │       │   ├── test_store.py
 │       │   └── test_pipeline.py  
+│       ├── ner/                    # NEW: NER tests
+│       │   ├── __init__.py
+│       │   ├── conftest.py
+│       │   └── test_spacy_extractor.py
 │       ├── qa/                    # QA component tests
 │       │   ├── __init__.py
 │       │   └── test_qa.py
@@ -265,7 +281,18 @@ rag-document-qa/
 - Add proper error handling: 404 for invalid session, 422 for bad input, 500 with structured error
 - **Write integration tests:** Upload a doc, ask a question, verify response structure
 
-### Phase 6: Dockerization
+### Phase 7: Named Entity Recognition (1-2 hours)
+- Implement `BaseNERExtractor` ABC with `extract_entities()` and `highlight_entities()` methods
+- Implement `SpaCyExtractor` with lazy model loading and HTML highlighting
+- Add NER configuration to `config.py`
+- Update `AskResponse` schema to include entities and highlighted answer
+- Integrate NER service into `/ask` endpoint via dependency injection
+- Add spaCy to dependencies and Dockerfile
+- Create comprehensive test suite for NER functionality
+- Update frontend to display highlighted entities with CSS styling
+- **Verify:** NER highlights entities in answers without breaking existing functionality
+
+### Phase 8: Dockerization
 - Create `backend/Dockerfile`:
   - Multi-stage build (builder with uv + deps, runtime with minimal image)
   - Install system deps for PyMuPDF and EasyOCR (`libgl1`, etc.)
@@ -275,7 +302,7 @@ rag-document-qa/
   - Environment variables from `.env`
 - **Verify:** `docker compose up --build` → Swagger UI works → upload + ask works
 
-### Phase 7: Documentation (README.md)
+### Phase 9: Documentation (README.md)
 - Project description and approach rationale
 - Setup instructions (manual with uv + Docker)
 - Example API requests/responses (curl + Swagger screenshots)
@@ -357,13 +384,53 @@ Body:
 
 Response 200:
 {
-  "answer": "The termination clause states that...",
+  "answer": "Apple announced a $3 billion deal with Samsung in Cupertino last Monday.",
+  "highlighted_answer": "<mark class=\"entity-ORG\">Apple</mark> announced a <mark class=\"entity-MONEY\">$3 billion</mark> deal with <mark class=\"entity-ORG\">Samsung</mark> in <mark class=\"entity-GPE\">Cupertino</mark> last <mark class=\"entity-DATE\">Monday</mark>.",
+  "entities": [
+    {
+      "text": "Apple",
+      "label": "ORG",
+      "start": 0,
+      "end": 5,
+      "confidence": 0.95
+    },
+    {
+      "text": "$3 billion",
+      "label": "MONEY", 
+      "start": 20,
+      "end": 30,
+      "confidence": 0.88
+    },
+    {
+      "text": "Samsung",
+      "label": "ORG",
+      "start": 40,
+      "end": 47,
+      "confidence": 0.92
+    },
+    {
+      "text": "Cupertino",
+      "label": "GPE",
+      "start": 51,
+      "end": 60,
+      "confidence": 0.89
+    },
+    {
+      "text": "Monday",
+      "label": "DATE",
+      "end": 71,
+      "confidence": 0.85
+    }
+  ],
   "sources": [
     {
       "chunk": "Section 8.1 — Either party may terminate...",
       "score": 0.87
     }
-  ]
+  ],
+  "qa_engine": "...",
+  "qa_model": "...",
+  "embedding_model": "..."
 }
 ```
 
@@ -381,15 +448,27 @@ Response 200:
 
 Each enhancement is assessed for **complexity**, **files affected**, and **what changes**.
 
-### 6.1 Named Entity Recognition (NER)
-- **Complexity:** Medium (1-2 hours)
-- **Approach:** Add spaCy with a pre-trained model (`en_core_web_sm`) or a transformer-based NER
+### 6.1 Named Entity Recognition (NER) - Updated
+- **Complexity:** Low-Medium (1-2 hours)
+- **Approach:** Add spaCy with pre-trained model (`en_core_web_sm`)
+- **Technology:** spaCy only (no Hugging Face dependencies)
 - **Changes needed:**
-  - New service: `services/ner.py` with entity extraction logic
-  - Update `schemas/ask.py`: add `entities` field to `AskResponse`
-  - Update `api/ask.py`: call NER service on the answer text
-  - Update `Dockerfile`: install spaCy model
-- **Notes:** Can run NER on the answer text and/or the source chunks. spaCy is lightweight; transformer NER is more accurate but heavier.
+  - New service package: `services/ner/` with abstract base class and spaCy implementation
+  - Update `schemas/ask.py`: add `NamedEntity` model and `entities` field to `AskResponse`
+  - Update `api/ask.py`: integrate NER service via dependency injection
+  - Update `config.py`: add NER configuration settings
+  - Update `pyproject.toml`: add spaCy dependency
+  - Update `Dockerfile`: install spaCy model during build
+  - Update `frontend/app.py`: display highlighted entities with CSS styling
+  - New test package: `tests/ner/` with unit and integration tests
+- **Features:**
+  - Entity extraction from answer text using all spaCy default entity types
+  - HTML highlighting with CSS classes by entity type
+  - Simple enable/disable configuration
+  - Graceful fallback when NER disabled
+  - Comprehensive test coverage
+- **Entity Types Supported:** All spaCy defaults (PERSON, ORG, GPE, PRODUCT, EVENT, WORK_OF_ART, LAW, LANGUAGE, TIME, PERCENT, MONEY, QUANTITY, ORDINAL, CARDINAL)
+- **Frontend Integration:** Highlighted text with color-coded entity types
 
 ### 6.2 Caching Layer (Redis)
 - **Complexity:** Medium (2-3 hours)

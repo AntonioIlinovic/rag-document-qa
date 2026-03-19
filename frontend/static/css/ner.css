@@ -1,0 +1,209 @@
+/* NER (Named Entity Recognition) Styling */
+
+/* CSS Custom Properties for Entity Colors */
+:root {
+  --entity-person-color: #ffeb3b;
+  --entity-org-color: #4caf50;
+  --entity-gpe-color: #2196f3;
+  --entity-product-color: #ff9800;
+  --entity-event-color: #9c27b0;
+  --entity-work_of_art-color: #795548;
+  --entity-law-color: #607d8b;
+  --entity-language-color: #009688;
+  --entity-time-color: #e91e63;
+  --entity-percent-color: #ff5722;
+  --entity-money-color: #ffc107;
+  --entity-quantity-color: #8bc34a;
+  --entity-ordinal-color: #3f51b5;
+  --entity-cardinal-color: #00bcd4;
+  --entity-date-color: #673ab7;
+  --entity-default-color: #9e9e9e;
+  
+  /* Text colors for contrast */
+  --entity-dark-text: #000000;
+  --entity-light-text: #ffffff;
+}
+
+/* Base entity styling */
+[data-entity-type] {
+  display: inline-block;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-weight: 500;
+  margin: 1px 0;
+  line-height: 1.2;
+}
+
+/* Entity highlighting styles */
+[data-entity-type="PERSON"] {
+  background-color: var(--entity-person-color);
+  color: var(--entity-dark-text);
+}
+
+[data-entity-type="ORG"] {
+  background-color: var(--entity-org-color);
+  color: var(--entity-light-text);
+}
+
+[data-entity-type="GPE"] {
+  background-color: var(--entity-gpe-color);
+  color: var(--entity-light-text);
+}
+
+[data-entity-type="PRODUCT"] {
+  background-color: var(--entity-product-color);
+  color: var(--entity-light-text);
+}
+
+[data-entity-type="EVENT"] {
+  background-color: var(--entity-event-color);
+  color: var(--entity-light-text);
+}
+
+[data-entity-type="WORK_OF_ART"] {
+  background-color: var(--entity-work_of_art-color);
+  color: var(--entity-light-text);
+}
+
+[data-entity-type="LAW"] {
+  background-color: var(--entity-law-color);
+  color: var(--entity-light-text);
+}
+
+[data-entity-type="LANGUAGE"] {
+  background-color: var(--entity-language-color);
+  color: var(--entity-light-text);
+}
+
+[data-entity-type="TIME"] {
+  background-color: var(--entity-time-color);
+  color: var(--entity-light-text);
+}
+
+[data-entity-type="PERCENT"] {
+  background-color: var(--entity-percent-color);
+  color: var(--entity-light-text);
+}
+
+[data-entity-type="MONEY"] {
+  background-color: var(--entity-money-color);
+  color: var(--entity-dark-text);
+}
+
+[data-entity-type="QUANTITY"] {
+  background-color: var(--entity-quantity-color);
+  color: var(--entity-dark-text);
+}
+
+[data-entity-type="ORDINAL"] {
+  background-color: var(--entity-ordinal-color);
+  color: var(--entity-light-text);
+}
+
+[data-entity-type="CARDINAL"] {
+  background-color: var(--entity-cardinal-color);
+  color: var(--entity-light-text);
+}
+
+[data-entity-type="DATE"] {
+  background-color: var(--entity-date-color);
+  color: var(--entity-light-text);
+}
+
+/* Fallback for unknown entity types */
+[data-entity-type]:not([data-entity-type="PERSON"]):not([data-entity-type="ORG"]):not([data-entity-type="GPE"]):not([data-entity-type="PRODUCT"]):not([data-entity-type="EVENT"]):not([data-entity-type="WORK_OF_ART"]):not([data-entity-type="LAW"]):not([data-entity-type="LANGUAGE"]):not([data-entity-type="TIME"]):not([data-entity-type="PERCENT"]):not([data-entity-type="MONEY"]):not([data-entity-type="QUANTITY"]):not([data-entity-type="ORDINAL"]):not([data-entity-type="CARDINAL"]):not([data-entity-type="DATE"]) {
+  background-color: var(--entity-default-color);
+  color: var(--entity-light-text);
+}
+
+/* Entity label styling for summary */
+.entity-label {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: bold;
+  font-size: 0.9em;
+  margin-right: 8px;
+  margin-bottom: 4px;
+}
+
+.entity-label[data-entity-type="PERSON"] {
+  background-color: var(--entity-person-color);
+  color: var(--entity-dark-text);
+}
+
+.entity-label[data-entity-type="ORG"] {
+  background-color: var(--entity-org-color);
+  color: var(--entity-light-text);
+}
+
+.entity-label[data-entity-type="GPE"] {
+  background-color: var(--entity-gpe-color);
+  color: var(--entity-light-text);
+}
+
+.entity-label[data-entity-type="PRODUCT"] {
+  background-color: var(--entity-product-color);
+  color: var(--entity-light-text);
+}
+
+.entity-label[data-entity-type="EVENT"] {
+  background-color: var(--entity-event-color);
+  color: var(--entity-light-text);
+}
+
+.entity-label[data-entity-type="WORK_OF_ART"] {
+  background-color: var(--entity-work_of_art-color);
+  color: var(--entity-light-text);
+}
+
+.entity-label[data-entity-type="LAW"] {
+  background-color: var(--entity-law-color);
+  color: var(--entity-light-text);
+}
+
+.entity-label[data-entity-type="LANGUAGE"] {
+  background-color: var(--entity-language-color);
+  color: var(--entity-light-text);
+}
+
+.entity-label[data-entity-type="TIME"] {
+  background-color: var(--entity-time-color);
+  color: var(--entity-light-text);
+}
+
+.entity-label[data-entity-type="PERCENT"] {
+  background-color: var(--entity-percent-color);
+  color: var(--entity-light-text);
+}
+
+.entity-label[data-entity-type="MONEY"] {
+  background-color: var(--entity-money-color);
+  color: var(--entity-dark-text);
+}
+
+.entity-label[data-entity-type="QUANTITY"] {
+  background-color: var(--entity-quantity-color);
+  color: var(--entity-dark-text);
+}
+
+.entity-label[data-entity-type="ORDINAL"] {
+  background-color: var(--entity-ordinal-color);
+  color: var(--entity-light-text);
+}
+
+.entity-label[data-entity-type="CARDINAL"] {
+  background-color: var(--entity-cardinal-color);
+  color: var(--entity-light-text);
+}
+
+.entity-label[data-entity-type="DATE"] {
+  background-color: var(--entity-date-color);
+  color: var(--entity-light-text);
+}
+
+/* Fallback for unknown entity types in labels */
+.entity-label:not([data-entity-type="PERSON"]):not([data-entity-type="ORG"]):not([data-entity-type="GPE"]):not([data-entity-type="PRODUCT"]):not([data-entity-type="EVENT"]):not([data-entity-type="WORK_OF_ART"]):not([data-entity-type="LAW"]):not([data-entity-type="LANGUAGE"]):not([data-entity-type="TIME"]):not([data-entity-type="PERCENT"]):not([data-entity-type="MONEY"]):not([data-entity-type="QUANTITY"]):not([data-entity-type="ORDINAL"]):not([data-entity-type="CARDINAL"]):not([data-entity-type="DATE"]) {
+  background-color: var(--entity-default-color);
+  color: var(--entity-light-text);
+}
