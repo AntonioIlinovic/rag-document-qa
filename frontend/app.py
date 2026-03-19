@@ -45,7 +45,7 @@ def init_session_state():
 class BackendClient:
     def __init__(self, base_url: str):
         self.base_url = base_url.rstrip('/')
-        self.timeout = 30.0
+        self.timeout = 60.0
 
     def health_check(self) -> bool:
         try:
