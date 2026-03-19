@@ -9,6 +9,7 @@ from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.config import settings
 from app.schemas.ask import AskRequest, AskResponse, SourceChunk, NamedEntity
 from app.services.qa.base import BaseQAEngine
 from app.services.ner.base import BaseNERExtractor
@@ -66,7 +67,7 @@ async def ask_question(
         logger.info(f"Querying session {request.session_id}: '{request.question}'")
         
         # Retrieve relevant chunks using RAG pipeline
-        search_results = pipeline.query(request.question, top_k=5)
+        search_results = pipeline.query(request.question, top_k=settings.rag_top_k_chunks_used)
         
         if not search_results:
             logger.warning(f"No relevant chunks found for question: {request.question}")

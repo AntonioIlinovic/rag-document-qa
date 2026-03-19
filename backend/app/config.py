@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     chunk_size: int = 1000
     chunk_overlap: int = 200
     embedding_model: str = "all-MiniLM-L6-v2"
+    # Number of document chunks to retrieve for RAG queries (higher = more context)
+    rag_top_k_chunks_used: int = 5
 
     # QA Configuration
     openai_api_key: str = ""

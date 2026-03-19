@@ -52,7 +52,7 @@ class BaseRAGPipeline(ABC):
     def query(
         self,
         question: str,
-        top_k: int = 5,
+        top_k: int,
     ) -> List[Dict[str, Any]]:
         """Embed a question and retrieve the most relevant chunks.
 
@@ -189,7 +189,7 @@ class RAGPipeline(BaseRAGPipeline):
     def query(
         self,
         question: str,
-        top_k: int = 5,
+        top_k: int,
     ) -> List[Dict[str, Any]]:
         """Embed a question and retrieve the most relevant chunks.
 

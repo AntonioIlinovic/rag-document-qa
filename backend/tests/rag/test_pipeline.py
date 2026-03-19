@@ -147,7 +147,7 @@ def test_query_passes_top_k_to_store(pipeline, mock_store):
 
 def test_query_result_shape(pipeline):
     """Test that query results contain the expected keys."""
-    results = pipeline.query("Any question?")
+    results = pipeline.query("Any question?", top_k=5)
 
     for result in results:
         assert "chunk" in result
@@ -186,7 +186,7 @@ def test_query_top_k_zero_returns_empty_list(pipeline, mock_embedder, mock_store
 def test_query_uses_only_first_embedding(pipeline, mock_embedder, mock_store):
     """Test that query extracts only the first embedding from embed_texts output."""
     # embed_texts returns a list; query should use index [0]
-    pipeline.query("Test question")
+    pipeline.query("Test question", top_k=5)
 
     _, search_kwargs = mock_store.search.call_args
     query_emb = search_kwargs.get("query_embedding") or mock_store.search.call_args[0][0]

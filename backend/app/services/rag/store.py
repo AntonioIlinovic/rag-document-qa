@@ -40,7 +40,7 @@ class BaseVectorStore(ABC):
         pass
 
     @abstractmethod
-    def search(self, query_embedding: List[float], top_k: int = 5) -> List[Dict[str, Any]]:
+    def search(self, query_embedding: List[float], top_k: int) -> List[Dict[str, Any]]:
         """Search for similar documents using query embedding.
 
         Args:
@@ -191,7 +191,7 @@ class ChromaDBStore(BaseVectorStore):
         except Exception as e:
             raise RuntimeError(f"Failed to add documents to ChromaDB: {e}")
 
-    def search(self, query_embedding: List[float], top_k: int = 5) -> List[Dict[str, Any]]:
+    def search(self, query_embedding: List[float], top_k: int) -> List[Dict[str, Any]]:
         """Search for similar documents using query embedding.
 
         Args:
