@@ -180,9 +180,10 @@ rag-document-qa/
 ├── app_data/         # Runtime storage: sessions, ChromaDB indexes (gitignored)
 │   └── sessions/
 │       └── <session_id>/
-│           ├── session.json
+│           ├── session.json       # Session metadata
+│           ├── chat.json          # Chat history for the session
 │           ├── documents/
-│           │   ├── original/
+│           │   ├── original/      # Original uploaded documents
 │           │   │   ├── doc1.pdf
 │           │   │   └── doc2.jpg
 │           │   └── extracted/   # Debug copies of extracted text (primary text stored in ChromaDB) - kept for easier verification of extraction results
