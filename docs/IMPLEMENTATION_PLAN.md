@@ -131,7 +131,7 @@ rag-document-qa/
 │   │   │
 │   │   └── services/
 │   │       ├── __init__.py
-│   │       ├── ner/                      # NEW: NER service package
+│   │       ├── ner/                      # NER service package
 │   │       │   ├── __init__.py
 │   │       │   ├── base.py              # Abstract base class
 │   │       │   ├── spacy_extractor.py   # SpaCy NER implementation
@@ -213,8 +213,17 @@ rag-document-qa/
     ├── .env                         # Frontend environment variables (gitignored)
     ├── .env.example                 # Example frontend env vars (committed)
     ├── Dockerfile
-    ├── pyproject.toml
-    └── app.py
+    ├── README.md                    # Frontend setup and usage documentation
+    ├── pyproject.toml               # uv-managed dependencies
+    ├── uv.lock                      # Dependency lock file
+    ├── app.py                       # Main Streamlit application
+    ├── components/                  # Reusable UI components
+    │   ├── __init__.py
+    │   ├── config_section.py        # Configuration panel component
+    │   └── ner_highlighting.py      # NER highlighting utilities
+    └── static/                      # Static assets
+        └── css/
+            └── ner.css              # NER highlighting styles
 ```
 
 ### Structure Rationale
@@ -351,7 +360,9 @@ rag-document-qa/
 
 ## 5. API Design
 
-### `POST /upload`
+### Core Endpoints
+
+#### `POST /upload`
 ```
 Content-Type: multipart/form-data
 
@@ -372,20 +383,21 @@ Response 200:
 }
 ```
 
-### `POST /ask`
+#### `POST /ask`
 ```
 Content-Type: application/json
 
 Body:
 {
   "session_id": "a1b2c3d4-...",
-  "question": "What is the termination clause?"
+  "question": "What is the termination clause?",
+  "qa_engine": "cloud",  // Optional: "cloud" or "local", defaults to "cloud"
+  "ner_enabled": true    // Optional: enable/disable NER, defaults to true
 }
 
 Response 200:
 {
   "answer": "Apple announced a $3 billion deal with Samsung in Cupertino last Monday.",
-  "highlighted_answer": "<mark class=\"entity-ORG\">Apple</mark> announced a <mark class=\"entity-MONEY\">$3 billion</mark> deal with <mark class=\"entity-ORG\">Samsung</mark> in <mark class=\"entity-GPE\">Cupertino</mark> last <mark class=\"entity-DATE\">Monday</mark>.",
   "entities": [
     {
       "text": "Apple",
@@ -418,6 +430,7 @@ Response 200:
     {
       "text": "Monday",
       "label": "DATE",
+      "start": 65,
       "end": 71,
       "confidence": 0.85
     }
@@ -425,16 +438,107 @@ Response 200:
   "sources": [
     {
       "chunk": "Section 8.1 — Either party may terminate...",
-      "score": 0.87
+      "score": 0.87,
+      "metadata": {}
     }
   ],
-  "qa_engine": "...",
-  "qa_model": "...",
-  "embedding_model": "..."
+  "qa_engine": "cloud",
+  "qa_model": "gpt-4o-mini",
+  "embedding_model": "all-MiniLM-L6-v2"
 }
 ```
 
-### `GET /health`
+### Session Management Endpoints
+
+#### `GET /sessions/`
+```
+Response 200:
+{
+  "sessions": [
+    {
+      "session_id": "a1b2c3d4-...",
+      "created_at": "2024-01-15T10:30:00Z",
+      "document_count": 2,
+      "filenames": ["contract.pdf", "specification.docx"],
+      "total_chunks": 85
+    }
+  ]
+}
+```
+
+#### `GET /sessions/{session_id}`
+```
+Response 200:
+{
+  "session_id": "a1b2c3d4-...",
+  "created_at": "2024-01-15T10:30:00Z",
+  "document_count": 2,
+  "total_chunks": 85,
+  "documents": [
+    {
+      "filename": "contract.pdf",
+      "chunks": 47,
+      "status": "processed"
+    },
+    {
+      "filename": "specification.docx",
+      "chunks": 38,
+      "status": "processed"
+    }
+  ]
+}
+```
+
+### Chat History Endpoints
+
+#### `POST /chat/message`
+```
+Content-Type: application/json
+
+Body:
+{
+  "session_id": "a1b2c3d4-...",
+  "role": "user" | "assistant",
+  "content": "What are the payment terms?",
+  "details": { ... }  // Optional, for assistant messages only
+}
+
+Response 200:
+{
+  "success": true,
+  "message": "User message saved successfully"
+}
+```
+
+#### `GET /chat/history/{session_id}`
+```
+Response 200:
+{
+  "session_id": "a1b2c3d4-...",
+  "message_count": 4,
+  "messages": [
+    {
+      "role": "user",
+      "content": "What are the payment terms?",
+      "timestamp": "2024-01-15T10:35:00Z",
+      "details": null
+    },
+    {
+      "role": "assistant",
+      "content": "Payment terms are Net 30 days...",
+      "timestamp": "2024-01-15T10:35:15Z",
+      "details": {
+        "sources": [...],
+        "entities": [...]
+      }
+    }
+  ]
+}
+```
+
+### Health Check
+
+#### `GET /health`
 ```
 Response 200:
 {
