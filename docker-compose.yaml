@@ -22,6 +22,9 @@ services:
       - ./frontend:/app  # For development - enables hot reload
     env_file:
       - ./frontend/.env
+    # Override BACKEND_URL for Docker networking (backend service name)
+    environment:
+      - BACKEND_URL=http://backend:8000
     depends_on:
       - backend
     command: ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true", "--server.fileWatcherType=watchdog"]
