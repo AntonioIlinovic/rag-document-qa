@@ -4,19 +4,140 @@ An API-first service designed to turn static documents (PDFs and images) into se
 
 
 ## Setup Instructions
-<!-- TODO: Add setup instructions -->
+
+Before running the application, you need to configure environment variables. These settings tell the application how to connect to external services like OpenAI.
+
+1. **Configure Environment Variables**
+   ```bash
+   # Copy the example environment files to create your local configuration
+   # From your project's root directory
+   cp backend/.env.example backend/.env
+   cp frontend/.env.example frontend/.env
+   ```
+
+2. **Set OpenAI API Key** (Required for cloud QA engine)
+   ```bash
+   # Edit backend/.env and replace:
+   OPENAI_API_KEY=<INSERT_YOUR_OPENAI_API_KEY_HERE>
+   ```
+
+> **Note**: The `.env.example` files contain all the necessary configuration with sensible defaults. You only need to add your OpenAI API key to enable the cloud-based question answering feature.
+
+## Docker Installation (Recommended)
+
+Start both services with a single command:
+
+```bash
+docker compose up --build
+```
+
+This builds and starts:
+- Backend API on `http://localhost:8000`
+- Frontend UI on `http://localhost:8501`
 
 ## Manual Installation
-<!-- TODO: Add manual installation instructions -->
 
-## Docker Installation
-<!-- TODO: Add Docker installation instructions -->
+Run locally using `uv` (requires Python 3.12+):
 
-## Example API Requests and Responses
-<!-- TODO: Add example API requests and responses -->
+```bash
+# Backend (in ./backend directory)
+uv sync
+uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
-## Approach and Tools
-<!-- TODO: Add description of approach and tools/models chosen -->
+# Frontend (in ./frontend directory) 
+uv sync
+uv run streamlit run app.py --server.port 8501
+```
 
-## Optional: Screenshots and Demo
-<!-- TODO: Add screenshots, demo video, or other creative additions -->
+> **Note**: There is currently a known issue when running the application manually. I will fix it over the weekend. For now, I recommend using the Docker installation method.
+
+## API Usage
+
+> **Recommendation**: While you can use the API directly, I recommend using the Streamlit frontend at `http://localhost:8501` for the full experience. I developed the frontend to provide session management, chat history, and a more user-friendly interface for uploading documents and asking questions.
+
+### Core Endpoints
+
+#### Upload Documents
+```bash
+POST /upload
+Content-Type: multipart/form-data
+
+# Upload one or more files (PDF, PNG, JPG, TXT, MD)
+curl -X POST "http://localhost:8000/upload" \
+  -F "files=@document.pdf" \
+  -F "files=@image.jpg"
+```
+
+**Response:**
+```json
+{
+  "session_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "documents": [
+    {
+      "filename": "document.pdf",
+      "chunks": 15,
+      "status": "processed"
+    }
+  ]
+}
+```
+
+#### Ask Questions
+```bash
+POST /ask
+Content-Type: application/json
+
+{
+  "question": "What is the total amount on the invoice?",
+  "session_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "use_cloud_qa": true
+}
+```
+
+**Response:**
+```json
+{
+  "answer": "The total amount on the invoice is $1,234.56.",
+  "sources": [
+    {
+      "filename": "document.pdf",
+      "chunk_id": 3,
+      "text": "Total Amount: $1,234.56"
+    }
+  ],
+  "entities": [
+    {"text": "$1,234.56", "label": "MONEY", "start": 23, "end": 32}
+  ]
+}
+```
+
+### Additional Endpoints
+
+The API also provides session management and chat history features:
+- `GET /sessions/` - List all sessions
+- `GET /sessions/{session_id}` - Get session details  
+- `POST /chat/message` - Save chat messages
+- `GET /chat/history/{session_id}` - Get chat history
+
+## Architecture & Tools
+
+### Core Technologies
+
+- **FastAPI** - Async web framework with auto-generated OpenAPI docs and native Pydantic integration
+- **ChromaDB** - Vector database with built-in persistence and metadata filtering for document embeddings
+- **OpenAI API** - High-quality question answering with easy integration and reliable performance
+- **EasyOCR** - Multi-language OCR engine providing accurate text extraction from images and scanned documents
+- **PyMuPDF** - Fast PDF text extraction with reliable performance and small footprint
+- **sentence-transformers** - Free local embeddings using the `all-MiniLM-L6-v2` model for semantic search
+
+### Key Features
+
+- **RAG Pipeline**: Document chunking → embedding → retrieval → answer generation
+- **Multi-format Support**: PDF, images (PNG/JPG), and text files
+- **Session Management**: Persistent document storage across requests
+- **Named Entity Recognition**: Highlights entities like money, dates, and organizations in responses
+- **Flexible QA**: Choose between cloud (OpenAI) or local (DistilBERT) question answering
+
+## Development
+
+The project uses `uv` for fast dependency management and includes comprehensive testing with `pytest`. See `docs/IMPLEMENTATION_PLAN.md` for detailed technical decisions and architecture.
