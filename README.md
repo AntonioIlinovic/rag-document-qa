@@ -1,5 +1,44 @@
 # rag-document-qa
-An API-first service designed to turn static documents (PDFs and images) into searchable, interactive data. Users can upload a file and immediately ask questions about its contents—like "What is the total on this invoice?" or "Summarize the termination clause"—receiving AI-generated answers based strictly on the document’s text.
+An API-first service designed to turn static documents (PDFs and images) into searchable, interactive data. Users can upload a file and immediately ask questions about its contents—like "What is the total on this invoice?" or "Summarize the termination clause"—receiving AI-generated answers based strictly on the document's text.
+
+## Application Flow
+
+### 1. Initial Application View
+![Initial Application View](docs/images/app_flow_1.png)
+
+When you first open the application, you'll see a clean interface with the sidebar for document management and the main chat area.
+
+### 2. Uploading Documents
+![Uploading Documents](docs/images/app_flow_2.png)
+
+Use the upload section in the sidebar to add your documents (PDFs, images, or text files). The application processes them automatically and creates a session.
+
+### 3. Document Management & Settings
+![Document Management and Settings](docs/images/app_flow_3.png)
+
+Once documents are uploaded, you can see them in the sidebar with their processing status. The settings panel allows you to configure the QA model (cloud vs local) and toggle Named Entity Recognition (NER) highlighting.
+
+### 4. Question Answering with Source Details
+![Question Answering with Sources](docs/images/app_flow_4.png)
+
+Ask questions about your documents and receive answers. Click the expandable sections to see:
+- **Model Details**: Which model was used to generate the answer
+- **Source Chunks**: The specific document chunks that were retrieved and used for RAG (Retrieval-Augmented Generation)
+
+### 5. Another Q&A Example
+![Another Q&A Example](docs/images/app_flow_5.png)
+
+Different types of questions are handled, with detailed source information always available to show how the answer was constructed.
+
+### 6. Named Entity Recognition (NER) Highlighting
+![NER Highlighting](docs/images/app_flow_6.png)
+
+When NER is enabled, the application automatically identifies and highlights important entities (like money amounts, dates, organizations, people) in the answers, making key information easy to spot.
+
+### 7. Session Management
+![Session Management](docs/images/app_flow_7.png)
+
+The application maintains persistent chat sessions. Use the session selector in the sidebar to load previous conversations and continue where you left off. Each session preserves its uploaded documents and chat history.
 
 
 
