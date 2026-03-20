@@ -6,6 +6,10 @@ import yaml
 
 import httpx
 import streamlit as st
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Import NER highlighting component
 from components.ner_highlighting import render_answer_with_entities
