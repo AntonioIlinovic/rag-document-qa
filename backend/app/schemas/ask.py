@@ -18,12 +18,12 @@ class NamedEntity(BaseModel):
 
 
 class AskRequest(BaseModel):
-    """API request model for asking questions about uploaded documents.
+    """API request model for question-answering endpoint."""
     
-    Clients send this JSON payload to query documents within a session.
-    """
-    session_id: str = Field(..., description="Session ID containing the documents to query")
-    question: str = Field(..., description="Question to ask about the uploaded documents")
+    session_id: str = Field(..., description="Session ID for context")
+    question: str = Field(..., description="Question to ask about the documents")
+    qa_engine: str = Field(default="cloud", description="QA engine to use: 'cloud' or 'local'")
+    ner_enabled: bool = Field(default=True, description="Whether to enable NER processing")
 
 
 class SourceChunk(BaseModel):

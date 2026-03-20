@@ -10,9 +10,7 @@ from fastapi import Depends, HTTPException, status
 from app.config import Settings, settings
 from app.schemas.ask import AskRequest
 from app.schemas.chat import ChatMessageRequest
-from app.services.qa.base import BaseQAEngine
 from app.services.rag.pipeline import BaseRAGPipeline
-from app.services.ner.base import BaseNERExtractor
 from app.services.session.models import SessionData, SessionNotFoundError
 from app.services.session.service import get_session, get_pipeline_for_session
 
@@ -61,26 +59,6 @@ async def get_pipeline_from_request(
         RAGPipeline instance configured for the session
     """
     return get_pipeline_for_session(session_data.session_id)
-
-
-async def get_qa_engine(
-    app_settings: Annotated[Settings, Depends(get_settings)]
-) -> BaseQAEngine:
-    """Dependency to get QA engine based on configuration."""
-    from app.services.qa import get_qa_engine
-    return get_qa_engine(app_settings)
-
-
-async def get_ner_extractor(
-    app_settings: Annotated[Settings, Depends(get_settings)]
-) -> Optional[BaseNERExtractor]:
-    """Dependency to get NER extractor based on configuration.
-    
-    Returns:
-        NER extractor instance or None if NER is disabled
-    """
-    from app.services.ner import get_ner_extractor
-    return get_ner_extractor(app_settings)
 
 
 async def get_session_from_path(session_id: str) -> SessionData:

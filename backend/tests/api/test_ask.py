@@ -3,7 +3,7 @@
 from unittest.mock import AsyncMock, Mock
 import pytest
 from fastapi import HTTPException
-from app.api.deps import get_pipeline_from_request, get_qa_engine, get_session_data_from_request
+from app.api.deps import get_pipeline_from_request, get_session_data_from_request
 
 class TestAskEndpoint:
     """Test cases for the ask endpoint."""
@@ -26,7 +26,6 @@ class TestAskEndpoint:
         
         # Setup dependency overrides
         client.app.dependency_overrides[get_pipeline_from_request] = lambda: mock_pipeline
-        client.app.dependency_overrides[get_qa_engine] = lambda: mock_qa_engine
         
         # Test ask request
         request_data = {"session_id": session_id, "question": "What is the termination clause?"}
@@ -63,7 +62,6 @@ class TestAskEndpoint:
         mock_pipeline.count_documents.return_value = 0
         
         client.app.dependency_overrides[get_pipeline_from_request] = lambda: mock_pipeline
-        client.app.dependency_overrides[get_qa_engine] = lambda: Mock()
         
         request_data = {"session_id": session_id, "question": "What is the termination clause?"}
         response = client.post("/ask/", json=request_data)
@@ -96,7 +94,6 @@ class TestAskEndpoint:
         mock_pipeline.query.return_value = []
         
         client.app.dependency_overrides[get_pipeline_from_request] = lambda: mock_pipeline
-        client.app.dependency_overrides[get_qa_engine] = lambda: Mock()
         
         request_data = {"session_id": session_id, "question": "What is the termination clause?"}
         response = client.post("/ask/", json=request_data)

@@ -17,10 +17,8 @@ class Settings(BaseSettings):
     # QA Configuration
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
-    qa_engine: str = "local"  # cloud or local
 
     # NER Configuration
-    ner_enabled: bool = True
     spacy_model: str = "en_core_web_sm"
 
     # File Upload Configuration (loaded from shared_config.yaml)

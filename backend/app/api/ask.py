@@ -9,12 +9,12 @@ from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.config import settings
+from app.config import Settings, settings
 from app.schemas.ask import AskRequest, AskResponse, SourceChunk, NamedEntity
 from app.services.qa.base import BaseQAEngine
 from app.services.ner.base import BaseNERExtractor
 from app.services.rag.pipeline import BaseRAGPipeline
-from .deps import get_pipeline_from_request, get_qa_engine, get_ner_extractor
+from .deps import get_pipeline_from_request, get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +25,7 @@ router = APIRouter(prefix="/ask", tags=["ask"])
 async def ask_question(
     request: AskRequest,
     pipeline: Annotated[BaseRAGPipeline, Depends(get_pipeline_from_request)],
-    qa_engine: Annotated[BaseQAEngine, Depends(get_qa_engine)],
-    ner_extractor: Annotated[Optional[BaseNERExtractor], Depends(get_ner_extractor)]
+    app_settings: Annotated[Settings, Depends(get_settings)]
 ) -> AskResponse:
     """Ask a question about uploaded documents.
     
@@ -35,10 +34,9 @@ async def ask_question(
     Optionally extracts named entities from the answer.
     
     Args:
-        request: AskRequest with session_id and question
+        request: AskRequest with session_id, question, qa_engine, and ner_enabled
         pipeline: RAG pipeline for the session (injected)
-        qa_engine: QA engine for answer generation (injected)
-        ner_extractor: NER extractor for entity highlighting (injected, optional)
+        app_settings: Application settings (injected)
         
     Returns:
         AskResponse with answer, entities, and source chunks
@@ -53,6 +51,18 @@ async def ask_question(
         )
     
     try:
+        logger.info(f"Querying session {request.session_id}: '{request.question}'")
+        
+        # Create QA engine based on user request
+        from app.services.qa import get_qa_engine
+        qa_engine = get_qa_engine(app_settings, request.qa_engine)
+        
+        # Create NER extractor if enabled
+        ner_extractor = None
+        if request.ner_enabled:
+            from app.services.ner import get_ner_extractor
+            ner_extractor = get_ner_extractor(app_settings)
+        
         # Check if pipeline has any documents
         doc_count = pipeline.count_documents()
         logger.info(f"Document count in session {request.session_id}: {doc_count}")
@@ -67,13 +77,17 @@ async def ask_question(
         logger.info(f"Querying session {request.session_id}: '{request.question}'")
         
         # Retrieve relevant chunks using RAG pipeline
-        search_results = pipeline.query(request.question, top_k=settings.rag_top_k_chunks_used)
+        search_results = pipeline.query(request.question, top_k=app_settings.rag_top_k_chunks_used)
         
         if not search_results:
             logger.warning(f"No relevant chunks found for question: {request.question}")
             return AskResponse(
                 answer="I couldn't find relevant information in the uploaded documents to answer your question.",
-                sources=[]
+                entities=[],
+                sources=[],
+                qa_engine=qa_engine.get_engine_name(),
+                qa_model=qa_engine.get_model_name(),
+                embedding_model=pipeline.get_embedding_model_name()
             )
         
         # Extract chunk texts for QA engine

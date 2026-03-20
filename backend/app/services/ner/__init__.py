@@ -17,15 +17,11 @@ def get_ner_extractor(settings: Settings) -> Optional[BaseNERExtractor]:
     """Create and return an NER extractor based on configuration.
     
     Args:
-        settings: Application settings
+        settings: Application settings (contains spacy_model)
         
     Returns:
-        NER extractor instance or None if NER is disabled
+        NER extractor instance or None if model fails to load
     """
-    if not settings.ner_enabled:
-        logger.info("NER is disabled in configuration")
-        return None
-    
     try:
         # For now, only spaCy is supported
         extractor = SpaCyExtractor(model_name=settings.spacy_model)

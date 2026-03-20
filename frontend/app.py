@@ -9,6 +9,7 @@ import streamlit as st
 
 # Import NER highlighting component
 from components.ner_highlighting import render_answer_with_entities
+from components.config_section import render_config_section, get_qa_engine, is_ner_enabled
 
 # Configuration
 BACKEND_URL = os.getenv("BACKEND_URL")
@@ -70,7 +71,12 @@ class BackendClient:
         with httpx.Client(timeout=self.timeout) as client:
             response = client.post(
                 f"{self.base_url}/ask/",
-                json={"session_id": session_id, "question": question},
+                json={
+                    "session_id": session_id, 
+                    "question": question,
+                    "qa_engine": get_qa_engine(),
+                    "ner_enabled": is_ner_enabled()
+                },
                 follow_redirects=True,
             )
             response.raise_for_status()
@@ -302,6 +308,10 @@ def render_sidebar(client: BackendClient):
         for doc in st.session_state.documents:
             st.sidebar.markdown(f"&nbsp;&nbsp;📄 **{doc['filename']}** ({doc['chunks']} chunks)")
 
+    # ── Configuration section ─────────────────────────────────────────────
+    st.sidebar.divider()
+    render_config_section()
+
 
 # ── Chat interface ───────────────────────────────────────────────────────────
 
@@ -319,12 +329,18 @@ def render_chat_interface(client: BackendClient):
     for message in st.session_state.chat_messages:
         with st.chat_message(message["role"]):
             if message["role"] == "assistant" and message.get("details"):
-                # Use NER rendering if available
+                # Use NER rendering if available and enabled
                 details = message["details"]
-                render_answer_with_entities(
-                    answer=message["content"],
-                    entities=details.get("entities", [])
-                )
+                entities = details.get("entities", [])
+                
+                if entities and is_ner_enabled():
+                    render_answer_with_entities(
+                        answer=message["content"],
+                        entities=entities
+                    )
+                else:
+                    st.write(message["content"])
+                
                 if details.get("sources"):
                     render_answer_details(details)
             else:
@@ -352,12 +368,16 @@ def render_chat_interface(client: BackendClient):
                     result["processing_time"] = time.time() - start_time
 
                     answer = result.get("answer", "Sorry, I couldn't generate an answer.")
+                    entities = result.get("entities", [])
                     
-                    # Render answer with NER highlighting
-                    render_answer_with_entities(
-                        answer=answer,
-                        entities=result.get("entities", [])
-                    )
+                    # Render answer with NER highlighting if enabled
+                    if entities and is_ner_enabled():
+                        render_answer_with_entities(
+                            answer=answer,
+                            entities=entities
+                        )
+                    else:
+                        st.write(answer)
 
                     st.session_state.chat_messages.append({
                         "role": "assistant",

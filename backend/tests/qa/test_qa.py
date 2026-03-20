@@ -242,42 +242,42 @@ class TestQAFactory:
     def test_get_cloud_engine(self):
         """Test factory returns cloud engine when configured."""
         settings = Settings(
-            qa_engine="cloud",
-            openai_api_key="test-key"
+            openai_api_key="test-key",
+            openai_model="gpt-4o-mini"
         )
         
-        engine = get_qa_engine(settings)
+        engine = get_qa_engine(settings, "cloud")
         assert isinstance(engine, CloudQAEngine)
     
     def test_get_local_engine(self):
         """Test factory returns local engine when configured."""
         settings = Settings(
-            qa_engine="local",
-            openai_api_key=""
+            openai_api_key="",
+            openai_model="gpt-4o-mini"
         )
         
-        engine = get_qa_engine(settings)
+        engine = get_qa_engine(settings, "local")
         assert isinstance(engine, LocalQAEngine)
     
     def test_get_engine_case_insensitive(self):
         """Test factory handles case insensitive engine names."""
         settings = Settings(
-            qa_engine="LOCAL",
-            openai_api_key=""
+            openai_api_key="",
+            openai_model="gpt-4o-mini"
         )
         
-        engine = get_qa_engine(settings)
+        engine = get_qa_engine(settings, "LOCAL")
         assert isinstance(engine, LocalQAEngine)
     
     def test_invalid_engine(self):
         """Test factory raises error for invalid engine."""
         settings = Settings(
-            qa_engine="invalid",
-            openai_api_key=""
+            openai_api_key="",
+            openai_model="gpt-4o-mini"
         )
         
         with pytest.raises(ValueError, match="Unknown QA engine"):
-            get_qa_engine(settings)
+            get_qa_engine(settings, "invalid")
 
 
 @pytest.mark.integration

@@ -85,7 +85,7 @@ def render_answer_with_entities(answer: str, entities: List[Dict]) -> None:
         st.markdown(highlighted_answer, unsafe_allow_html=True)
         
         # Show entity summary
-        with st.expander("🏷️ Named Entities Found"):
+        with st.expander("Named Entities Found"):
             entity_counts = {}
             for entity in entities:
                 label = entity['label']
@@ -113,7 +113,7 @@ def render_entity_summary(entities: List[Dict]) -> None:
     
     load_ner_css()
     
-    with st.expander("🏷️ Named Entities Found"):
+    with st.expander("Named Entities Found"):
         entity_counts = {}
         for entity in entities:
             label = entity['label']
