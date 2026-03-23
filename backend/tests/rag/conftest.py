@@ -31,7 +31,7 @@ Is the SC-100 waterproof? The solar panels themselves and the outer fabric are I
 @pytest.fixture
 def rag_test_file():
     """Path to the single RAG test document."""
-    return Path(__file__).parent.parent.parent.parent / "dummy_docs" / "rag_test" / "example_document.txt"
+    return Path(__file__).parent.parent.parent.parent / "dummy_docs" / "rag_test" / "solar_solutions.txt"
 
 
 @pytest.fixture

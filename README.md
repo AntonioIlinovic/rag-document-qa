@@ -40,6 +40,11 @@ When NER is enabled, the application automatically identifies and highlights imp
 
 The application maintains persistent chat sessions. Use the session selector in the sidebar to load previous conversations and continue where you left off. Each session preserves its uploaded documents and chat history.
 
+### Complete Demo Video
+Watch the complete application flow in action:
+
+[![App Usage Demo](docs/videos/app_flow.mp4)](docs/videos/app_flow.mp4)
+
 
 
 ## Setup Instructions

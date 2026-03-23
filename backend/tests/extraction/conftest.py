@@ -44,7 +44,7 @@ def sample_image_bytes(sample_image_path):
 @pytest.fixture
 def sample_txt_path():
     """Absolute path to the sample TXT file in dummy_docs."""
-    return Path(__file__).parent.parent.parent.parent / "dummy_docs" / "rag_test" / "example_document.txt"
+    return Path(__file__).parent.parent.parent.parent / "dummy_docs" / "rag_test" / "solar_solutions.txt"
 
 
 @pytest.fixture

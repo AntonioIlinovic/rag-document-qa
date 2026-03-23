@@ -27,10 +27,10 @@ def test_text_extractor_returns_non_empty_text(sample_txt_bytes):
         - Result contains expected text content from the TXT file
     """
     # Arrange
-    extractor = get_extractor("example_document.txt")
+    extractor = get_extractor("solar_solutions.txt")
     
     # Act
-    result = extractor.extract(sample_txt_bytes, "example_document.txt")
+    result = extractor.extract(sample_txt_bytes, "solar_solutions.txt")
     
     # Assert
     assert isinstance(result, str)
