@@ -6,7 +6,8 @@ Provides named entity recognition using spaCy's pre-trained models.
 import logging
 from typing import List, Optional
 
-from .base import BaseNERExtractor, NamedEntity
+from .base import BaseNERExtractor
+from app.schemas.ask import NamedEntity
 
 logger = logging.getLogger(__name__)
 

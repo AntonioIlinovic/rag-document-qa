@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import Mock
 from app.services.ner.spacy_extractor import SpaCyExtractor
-from app.services.ner.base import NamedEntity
+from app.schemas.ask import NamedEntity
 
 
 @pytest.fixture

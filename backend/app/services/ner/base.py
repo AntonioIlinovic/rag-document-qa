@@ -5,16 +5,8 @@ Defines the interface that all NER implementations must follow.
 
 from abc import ABC, abstractmethod
 from typing import List
-from pydantic import BaseModel
 
-
-class NamedEntity(BaseModel):
-    """Represents a named entity extracted from text."""
-    text: str
-    label: str
-    start: int
-    end: int
-    confidence: float = 0.0
+from app.schemas.ask import NamedEntity
 
 
 class BaseNERExtractor(ABC):
